@@ -1,0 +1,26 @@
+.mm_admin_attachments .form-table, .mm_admin_media .form-table {
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	box-sizing: border-box;
+	border-width: 1px;
+	border-color: #999;
+	border-style: solid;
+	border-collapse: separate;
+}
+
+#mm-message-date {
+	width: 100px;
+}
+
+#mm-message-verses {
+	width: 99%;
+}
+
+#mm-media-embedded {
+	display: none;
+}
+
+input.mediafield-video-url-n, input.mediafield-audio-url-n, .mm-attachment-url input {
+	width: 50%;
+}
