@@ -79,6 +79,7 @@ class Message_Manager {
 		remove_all_actions('do_feed_podcast');
 		add_action('do_feed_podcast', array($this, 'do_feed_podcast'), 10, 1);
 		add_action('pre_get_posts', array($this, 'sort_messages_by_sermon_date'));
+		add_filter('pre_option_posts_per_rss', array($this, 'show_all_messages_in_podcast'));
 
 		// set up the options page
 		new Message_Manager_Options();
@@ -410,8 +411,16 @@ class Message_Manager {
 		}
 	}
 	
+	function show_all_messages_in_podcast($limit) {
+		if (is_feed('podcast')) {
+			return 99999; // -1 breaks things
+		}
+		
+		return $limit;
+	}
+	
 	function sort_messages_by_sermon_date($query) {
-		if($query->is_main_query() && !is_admin() && is_post_type_archive(Message_Manager::$cpt_message)) {
+		if($query->is_main_query() && !is_admin() && is_post_type_archive(Message_Manager::$cpt_message)) {			
 			$meta_key = Message_Manager::$meta_prefix . 'details_date';
 			
 			$query->set('meta_key', $meta_key);
