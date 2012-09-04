@@ -644,8 +644,16 @@ class Message_Manager {
 			}
 		}
 		
-		set_transient($transient_id, $info);
-		return $info;
+		$new_info = array();
+		if (!empty($info['playtime_seconds'])) {
+			$new_info['playtime_seconds'] = $info['playtime_seconds'];
+		}
+		if (!empty($info['filesize'])) {
+			$new_info['filesize'] = $info['filesize'];
+		}
+		
+		set_transient($transient_id, $new_info);
+		return $new_info;
 	}
 	
 	/** BASIC API */
