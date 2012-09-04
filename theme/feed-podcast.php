@@ -22,7 +22,7 @@
 			<itunes:email><?php echo esc_html(Message_Manager_Options::get('podcast-owner-email', get_bloginfo_rss('admin_email'))); ?></itunes:email>
 		</itunes:owner>
 		<itunes:explicit>no</itunes:explicit>
-		<?php if (Message_Manager_Options::get('podcast-image')): ?><itunes:image href="<?php echo esc_html(Message_Manager_Options::get('podcast-image')); ?>" /><?php endif; ?>
+		<?php if (Message_Manager_Options::get('podcast-image')): ?><itunes:image href="<?php echo esc_url(preg_replace('/^https/i', 'http', Message_Manager_Options::get('podcast-image'))); ?>" /><?php endif; ?>
 		
 		<itunes:keywords><?php echo esc_html(Message_Manager_Options::get('podcast-keywords')); ?></itunes:keywords>
 		<?php 
