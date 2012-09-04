@@ -68,7 +68,7 @@ function mm_feed_sanitize($text) {
 	
 	$summary = $mb->get_the_value('summary');
 	if (!$summary) {
-		$summary = get_the_content();
+		$summary = get_the_excerpt();
 	}
 	$summary = mm_feed_sanitize($summary);
 	
