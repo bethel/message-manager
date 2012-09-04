@@ -18,7 +18,7 @@ class Message_Manager_Options {
 		$this->register_option('podcast-copyright');
 		$this->register_option('podcast-author');
 		$this->register_option('podcast-keywords');
-		$this->register_option('podcast-decription');
+		$this->register_option('podcast-description');
 		$this->register_option('podcast-owner-name');
 		$this->register_option('podcast-owner-email');
 		$this->register_option('podcast-image');
@@ -145,7 +145,7 @@ class Message_Manager_Options {
 					</tr>
 					<tr>
 						<th scope="row"><label for="<?php name('podcast-owner-email'); ?>">Owner Email:</label></th>
-						<td><input type="text" name="<?php name('podcast-owner-email'); ?>" value="<?php option('podcast-owner-name', get_bloginfo_rss('admin_email')); ?>" class="regular-text" />
+						<td><input type="text" name="<?php name('podcast-owner-email'); ?>" value="<?php option('podcast-owner-email', get_bloginfo_rss('admin_email')); ?>" class="regular-text" />
 							<p class="description">The email address of the owner.</p>
 						</td>
 					</tr>
