@@ -3,8 +3,10 @@
  * The Podcast Feed Template for Message Manager
  */
 
+require_once(Message_Manager::$path.'includes/encoding.php');
+
 function mm_feed_sanitize($text) {
-	$text = htmlspecialchars_decode(htmlspecialchars(strip_tags($text), ENT_QUOTES | ENT_XML1), ENT_QUOTES | ENT_XML1);
+	$text = Encoding::fixUTF8(htmlspecialchars_decode(htmlspecialchars(strip_tags($text), ENT_QUOTES | ENT_XML1), ENT_QUOTES | ENT_XML1));
 	return $text;
 }
 
