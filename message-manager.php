@@ -602,9 +602,6 @@ class Message_Manager {
 		
 		// valid cache
 		$info = get_transient($transient_id);
-		
-		
-		print_r($info);
 		if ($info) return $info;
 		
 		// no cache
