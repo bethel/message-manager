@@ -2,6 +2,13 @@
 /**
  * The Podcast Feed Template for Message Manager
  */
+
+function mm_feed_sanitize($text) {
+	$text = htmlspecialchars_decode(htmlspecialchars(strip_tags($text), ENT_QUOTES | ENT_XML1), ENT_QUOTES | ENT_XML1);
+	return $text;
+}
+
+
 ?>
 <?php header("Content-Type: application/rss+xml; charset=UTF-8"); ?>
 <?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>
@@ -59,15 +66,16 @@
 		$date == null;
 	}
 	
-	$summary = strip_tags($mb->get_the_value('summary'));
+	$summary = $mb->get_the_value('summary');
 	if (!$summary) {
-		$summary = strip_tags(get_the_content());
+		$summary = get_the_content();
 	}
+	$summary = mm_feed_sanitize($summary);
 	
-	$speakers = strip_tags(get_the_term_list(get_the_ID(), Message_Manager::$tax_speaker, '', ' &amp; ', ''));
-	$series = strip_tags(get_the_term_list(get_the_ID(), Message_Manager::$tax_series, '', ' &amp; ', ''));
-	$topics = strip_tags( get_the_term_list(get_the_ID(), Message_Manager::$tax_topics, '', ', ', '' ));
-	$topic = ( $topics ) ? sprintf( '<itunes:keywords>%s</itunes:keywords>', $topics ) : null;
+	$speakers = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_speaker, '', ' &amp; ', ''));
+	$series = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_series, '', ' &amp; ', ''));
+	$topics = mm_feed_sanitize( get_the_term_list(get_the_ID(), Message_Manager::$tax_topics, '', ', ', '' ));
+	$topic = mm_feed_sanitize( $topics ) ? sprintf( '<itunes:keywords>%s</itunes:keywords>', $topics ) : null;
 	
 	$image = Message_Manager::get_the_image(get_the_ID(), 'full');
 	$image = preg_replace('/^https/i', 'http', $image);
