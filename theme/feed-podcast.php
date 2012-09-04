@@ -6,10 +6,12 @@
 require_once(Message_Manager::$path.'includes/encoding.php');
 
 function mm_feed_sanitize($text) {
-	$text = Encoding::fixUTF8(htmlspecialchars_decode(htmlspecialchars(strip_tags($text), ENT_QUOTES | ENT_XML1), ENT_QUOTES | ENT_XML1));
-	return $text;
+        $pattern[] = '/&nbsp;/';
+        $replacement[] = ' ';
+        $text = preg_replace($pattern, $replacement, $text);
+        $text = Encoding::fixUTF8(html_entity_decode(htmlspecialchars(strip_tags($text), ENT_NOQUOTES | ENT_HTML401), ENT_QUOTES | ENT_XML1));
+        return $text;
 }
-
 
 ?>
 <?php header("Content-Type: application/rss+xml; charset=UTF-8"); ?>
@@ -91,8 +93,8 @@ function mm_feed_sanitize($text) {
 	$audio_url = preg_replace('/^https/i', 'http', $audio_url);
 	
 	$audio_duration = false;
-	if (!empty($audio_info['playtime_string'])) {
-		$audio_duration = $audio_info['playtime_string'];
+	if (!empty($audio_info['playtime_seconds'])) {
+		$audio_duration = gmdate("H:i:s", round($audio_info['playtime_seconds']));
 	}
 	
 	$audio_size = false;
