@@ -10,8 +10,19 @@ class Message_Manager_Options {
 	}
 	
 	function register() {
-		$this->register_option('message-slug');
-		$this->register_option('speaker-slug');
+		$this->register_option('base-name');
+		$this->register_option('podcast-title');
+		$this->register_option('podcast-subtitle');
+		$this->register_option('podcast-link');
+		$this->register_option('podcast-language');
+		$this->register_option('podcast-copyright');
+		$this->register_option('podcast-author');
+		$this->register_option('podcast-keywords');
+		$this->register_option('podcast-decription');
+		$this->register_option('podcast-owner-name');
+		$this->register_option('podcast-owner-email');
+		$this->register_option('podcast-image');
+		$this->register_option('podcast-categories');
 	}
 	
 	function register_option($option, $callback = false) {
@@ -71,59 +82,9 @@ class Message_Manager_Options {
 				<h3>Permalinks</h3>
 				<table class="form-table">
 					<tr>
-						<th scope="row"><label for="<?php name('base-name'); ?>">Basename:</label></th>
+						<th scope="row"><label for="<?php name('base-name'); ?>">Base Name:</label></th>
 						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('message-slug'); ?>" value="<?php option('message-slug', 'messages'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where the message should show up on your site.</p>
-						</td>
-					</tr>
-				
-				
-				
-				
-					<tr>
-						<th scope="row"><label for="<?php name('message-slug'); ?>">Message Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('message-slug'); ?>" value="<?php option('message-slug', 'messages'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where the message should show up on your site.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('speaker-slug'); ?>">Speaker Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('speaker-slug'); ?>" value="<?php option('speaker-slug', 'messages/speakers'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where speakers should show up on your site.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('series-slug'); ?>">Series Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('series-slug'); ?>" value="<?php option('series-slug', 'messages/series'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where series should show up on your site.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('topic-slug'); ?>">Topic Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('topic-slug'); ?>" value="<?php option('topic-slug', 'messages/topics'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where topics should show up on your site.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('venue-slug'); ?>">Venue Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('venue-slug'); ?>" value="<?php option('venue-slug', 'messages/venues'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where venues should show up on your site.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('book-slug'); ?>">Book Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('book-slug'); ?>" value="<?php option('book-slug', 'messages/books'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where books should show up on your site.</p>
-						</td>
-					</tr>
-				</table>
-				
-				<h3>Media Player</h3>
-				<table class="form-table">
-					<tr>
-						<th scope="row"><label for="<?php name('message-slug'); ?>">Message Slug:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('message-slug'); ?>" value="<?php option('message-slug', 'messages'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where the message should show up on your site.</p>
+							<p class="description">Enter the location of where messages should show up on your site.</p>
 						</td>
 					</tr>
 				</table>
@@ -195,7 +156,7 @@ class Message_Manager_Options {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><label for="<?php name('podcast-categories'); ?>">Description:</label></th>
+						<th scope="row"><label for="<?php name('podcast-categories'); ?>">Categories:</label></th>
 						<td><textarea name="<?php name('podcast-categories'); ?>" class="regular-text"><?php option('podcast-categories', 'Religion & Spirituality => Christianity, Spirituality'); ?></textarea>
 							<p class="description">Specify each top category as a new line. You may add subcategories by using the => operator and then specifying a comma seperated list.</p>
 						</td>
