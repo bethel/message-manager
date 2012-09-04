@@ -68,6 +68,17 @@ class Message_Manager {
 
 		// set up templating
 		add_filter('single_template', array($this, 'message_template_filter'), 1, 10);
+		
+		// set up permalinks
+		add_filter('request', array($this, 'request'));
+		add_filter('rewrite_rules_array', array($this, 'rewrite_rules_array'));
+		add_filter('post_link', array($this, 'post_type_link'), 10, 2);
+		add_filter('post_type_link', array($this, 'post_type_link'), 10, 2);
+		
+		// set up the podcast
+		remove_all_actions('do_feed_podcast');
+		add_action('do_feed_podcast', array($this, 'do_feed_podcast'), 10, 1);
+		add_action('pre_get_posts', array($this, 'sort_messages_by_sermon_date'));
 
 		// set up the options page
 		new Message_Manager_Options();
@@ -121,7 +132,7 @@ class Message_Manager {
 			'menu_icon' => Message_Manager::$url . 'img/nav_icon.png',
 			'capability_type' => 'post',
 			'has_archive' => true,
-			'rewrite' => array('slug'=>Message_Manager_Options::get('message-slug', 'messages'), 'with_front' => false),
+			'rewrite' => false,
 			'hierarchical' => false,
 			'supports' => array('title', 'editor', 'comments', 'thumbnail', 'revisions')
 		);
@@ -153,7 +164,7 @@ class Message_Manager {
 			'labels' => $labels,
 			'show_ui' => true,
 			'query_var' => true,
-			'rewrite' => array ('slug'=>Message_Manager_Options::get('speaker-slug', 'messages/speakers'), 'with_front'=>false),
+			'rewrite' => false
 		));
 	}
 
@@ -182,7 +193,7 @@ class Message_Manager {
 			'labels' => $labels,
 			'show_ui' => true,
 			'query_var' => true,
-			'rewrite' => array ('slug'=>Message_Manager_Options::get('series-slug', 'messages/series'), 'with_front'=>false),
+			'rewrite' => false
 		));
 	}
 
@@ -210,7 +221,7 @@ class Message_Manager {
 			'labels' => $labels,
 			'show_ui' => true,
 			'query_var' => true,
-			'rewrite' => array ('slug'=>Message_Manager_Options::get('topic-slug', 'messages/topics'), 'with_front'=>false),
+			'rewrite' => false
 		));
 	}
 
@@ -238,7 +249,7 @@ class Message_Manager {
 			'labels' => $labels,
 			'show_ui' => true,
 			'query_var' => true,
-			'rewrite' => array ('slug'=>Message_Manager_Options::get('venue-slug', 'messages/venues'), 'with_front'=>false),
+			'rewrite' => false
 		));
 	}
 
@@ -267,7 +278,7 @@ class Message_Manager {
 			'labels' => $labels,
 			'show_ui' => true,
 			'query_var' => true,
-			'rewrite' => array ('slug'=>Message_Manager_Options::get('book-slug', 'messages/books'), 'with_front'=>false),
+			'rewrite' => false
 		));
 	}
 
@@ -320,54 +331,99 @@ class Message_Manager {
 		wp_enqueue_script('mm-mediaelement-js', Message_Manager::$url.'includes/mediaelement/mediaelement-and-player.min.js', array('jquery'), Message_Manager::$version);
 	}
 
-	/*
-	function generate_rewrite_rules($wp_rewrite) {
-		$rules = array();
+	function post_type_link($link, $post) {
+		// only modify for message post type
+		if ($post->post_type != Message_Manager::$cpt_message) return $link;
 		
-		$message_slug = $wp_rewrite->root . Message_Manager_Options::get('message-slug');
+		// only modify if permalinks are enabled
+		if (get_option('permalink_structure') == '') return $link;
 		
-		// add basic slugs
-		$rules[$message_slug.'/?$'] =  'index.php?post_type='.Message_Manager::$cpt_message;
-		$rules[$message_slug.'/'.$wp_rewrite->pagination_base.'/([0-9]{1,})/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message .'&paged='.$wp_rewrite->preg_index($i);
+		$message_base = Message_Manager_Options::get('message-base', 'messages');
+		$base = home_url('/'.$message_base);
 		
-		// add feeds
-		if ($wp_rewrite->feeds) {
-			$feeds = '(' . trim( implode( '|', $wp_rewrite->feeds ) ) . ')';
-			$rules[$message_slug.'/feed/'.$feeds.'/?$'] = 'index.php?post_type=' . Message_Manager::$cpt_message . '&feed='.$wp_rewrite->preg_index($i);
-			$rules[$message_slug.'/'.$feeds.'/?$'] = 'index.php?post_type=' . Message_Manager::$cpt_message . '&feed='.$wp_rewrite->preg_index($i);
+		if ($series = get_the_terms($post->ID, Message_Manager::$tax_series)) {
+			$link = $base . '/' . array_pop($series)->slug . '/' . $post->post_name;
+		} else {
+			$link = $base . '/' . $post->post_name;
 		}
 		
+		return $link;
+	}	
+	
+	function rewrite_rules_array($rules) {
+		$mm_rules = array();
 		
+		$message_base = Message_Manager_Options::get('message-base', 'messages');
 		
+		// messages
+		$mm_rules[$message_base.'/?$'] =  'index.php?post_type='.Message_Manager::$cpt_message;
+		$mm_rules[$message_base.'/page/?([0-9]{1,})/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&paged=$matches[1]';
+		$mm_rules[$message_base.'/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=$matches[1]';
+		$mm_rules[$message_base.'/feed/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=$matches[1]';
 		
-		// add date slugs
-		$dates = array(
-			array('rule' => "([0-9]{4})/([0-9]{1,2})/([0-9]{1,2})", 'vars' => array('year', 'monthnum', 'day')),
-			array('rule' => "([0-9]{4})/([0-9]{1,2})", 'vars' => array('year', 'monthnum')),
-			array('rule' => "([0-9]{4})",'vars' => array('year'))
-		);
+		// series
+		$mm_rules[$message_base.'/([^/]+)/?$'] =  'index.php?'.Message_Manager::$tax_series.'=$matches[1]';
+		$mm_rules[$message_base.'/([^/]+)/page/?([0-9]{1,})/?$'] = 'index.php?'.Message_Manager::$tax_series.'=$matches[1]&paged=$matches[2]';
+		//$mm_rules[$message_base.'/([^/]+)/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?'.Message_Manager::$tax_series.'=$matches[1]&feed=$matches[2]';
+		//$mm_rules[$message_base.'/([^/]+)/feed/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?'.Message_Manager::$tax_series.'=$matches[1]&feed=$matches[2]';
 		
-		foreach ($dates as $date) {
-			$query = 'index.php?post_type='.Message_Manager::$cpt_message;
-			$rule = $message_slug.'/'.$date['rule'];
-			
-			$i = 1;
-			foreach ($date['vars'] as $var) {
-				$query .= '&'.$var.'='.$wp_rewrite->preg_index($i);
-				$i++;
-			}
-			
-			$rules[$rule."/?$"] = $query;
-			$rules[$rule."/feed/(feed|rdf|rss|rss2|atom)/?$"] = $query."&feed=".$wp_rewrite->preg_index($i);
-			$rules[$rule."/(feed|rdf|rss|rss2|atom)/?$"] = $query."&feed=".$wp_rewrite->preg_index($i);
-			$rules[$rule."/page/([0-9]{1,})/?$"] = $query."&paged=".$wp_rewrite->preg_index($i);	
-		}		
+		// series/message
+		$mm_rules[$message_base.'/([^/]+)/(.+?)/?$'] =  'index.php?'.Message_Manager::$cpt_message.'=$matches[2]';
 		
-		$wp_rewrite->rules = $rules + $wp_rewrite->rules;
-		return $wp_rewrite;
+		return $mm_rules + $rules;
 	}
-	*/
-
+	
+	// if the series does not exists treat the request like a message
+	function request($request) {
+		if (!empty($request[Message_Manager::$tax_series])) {
+			$slug = $request[Message_Manager::$tax_series];
+			
+			$term = get_term_by('slug', $slug, Message_Manager::$tax_series);
+			if ($term === false) {
+				global $wpdb;
+				$post = $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_name = %s AND post_type= %s", $slug, Message_Manager::$cpt_message));
+				
+				// if the message has a series, redirect the correct url
+				$series = get_the_terms($post, Message_Manager::$tax_series);
+				if (!empty($series)) {
+					wp_redirect(get_permalink($post));
+					die();
+				} else {
+					// treat the request like a message
+					unset($request[Message_Manager::$tax_series]);
+					$request['page'] = null;
+					$request[Message_Manager::$cpt_message] = $slug;
+					$request['post_type'] = Message_Manager::$cpt_message;
+					$request['name'] = $slug;
+				}
+			}
+		}
+		
+		return $request;
+	}
+	
+	function do_feed_podcast($for_comments) {
+		if (get_query_var( 'post_type' ) == Message_Manager::$cpt_message) {
+			load_template($this->find_theme_path('feed-podcast.php'));
+		} else {
+			do_feed_rss2($for_comments);
+		}
+	}
+	
+	function sort_messages_by_sermon_date($query) {
+		if($query->is_main_query() && !is_admin() && is_post_type_archive(Message_Manager::$cpt_message)) {
+			$meta_key = Message_Manager::$meta_prefix . 'details_date';
+			
+			$query->set('meta_key', $meta_key);
+			$query->set('meta_value', date('yy-mm-dd'));
+			$query->set('meta_compare', '>=');
+			$query->set('orderby', 'meta_value');
+			$query->set('order', 'DESC');
+		}
+		
+		return $query;
+	}
+	
 	function message_template_filter($template) {
 		global $post;
 		if ($post->post_type == Message_Manager::$cpt_message) {
@@ -512,6 +568,80 @@ class Message_Manager {
 		update_post_meta($message_id, Message_Manager::$meta_prefix . 'details_fields', array_unique($fields));
 	}
 	
+	/** THEME FUNCTIONS */
+
+	public static function get_the_image($post_id = null, $size = 'full') {
+		global $post;
+		
+		if ($post_id) {
+			$post = get_post($post_id);
+			$post_id = $post->ID;
+		}
+		
+		$image = wp_get_attachment_image_src(get_post_thumbnail_id($post_id), $size);
+		if (!empty($image)) {
+			if (is_array($image)) {
+				$image = $image[0];
+			}
+			return $image;
+		}
+	
+		$series = get_the_terms($post_id, Message_Manager::$tax_series);
+		if (!empty($series)) {
+			$image = Message_Manager::get_series_image(array_pop($series)->slug);
+			if (!empty($image)) {
+				return $image;
+			}
+		}
+		
+		return Message_Manager_Options::get('default-image');
+	}
+	
+	public static function get_id3_info($url) {
+		$transient_id = 'id3_'.sha1($url);
+		
+		// valid cache
+		$info = get_transient($transient_id);
+		
+		
+		print_r($info);
+		if ($info) return $info;
+		
+		// no cache
+		require_once 'includes/getid3/getid3.php';
+		$getID3 = new getID3;
+		
+		$wp_upload_dir = wp_upload_dir();
+		$baseurl = $wp_upload_dir['baseurl'];
+		
+		$filename = null;
+		$pieces = explode($baseurl, $url);
+		if (count($pieces) > 1) {
+			$filename = $wp_upload_dir['basedir'] . $pieces[1];
+		} 
+		
+		if (file_exists($filename)) {
+			$info = $getID3->analyze($filename);
+		} else {
+			// remote file
+			
+			$dir = get_temp_dir();
+			$filename = basename($filename);
+			$filename = time();
+			$filename = preg_replace('|\..*$|', '.tmp', $filename);
+			$filename = $dir . wp_unique_filename($dir, $filename);
+			touch($filename);			
+			
+			if (file_put_contents($filename, file_get_contents($url, false, null, 0))) {
+				$info = $getID3->analyze($filename);
+				unlink($filename);
+			}
+		}
+		
+		set_transient($transient_id, $info);
+		return $info;
+	}
+	
 	/** BASIC API */
 	
 	/**
@@ -575,6 +705,13 @@ class Message_Manager {
 		$term_id = $term->term_id;
 		
 		update_tax_meta($term_id, Message_Manager::$meta_prefix.'series_image_id', $attachment_id);
+	}
+	
+	public static function get_series_image($series_slug) {
+		$term = get_term_by('slug', $series_slug, Message_Manager::$tax_series);
+		$term_id = $term->term_id;
+		
+		return get_tax_meta($term_id, Message_Manager::$meta_prefix.'series_image_id', false);
 	}
 	
 	/**
