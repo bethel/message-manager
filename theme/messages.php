@@ -13,6 +13,7 @@ $items = Message_Manager::get_items_from_posts(true);
 					<h1>Messages</h1>
 			
 					<?php
+					$i = 1;
 					while(!empty($items)):
 					$item = array_shift($items);
 					$end = empty($items);
@@ -28,11 +29,11 @@ $items = Message_Manager::get_items_from_posts(true);
 		
 					</div>
 			
-					<?php if(!((count($items)-1) % 4)): ?>
+					<?php if(!($i % 4) || $end): ?>
 					<div class="clearfix"></div>
 					<?php endif;?>
 					
-					<?php endwhile; ?>
+					<?php $i++; endwhile; ?>
 			
 				</div>
 				<!-- end #main -->
