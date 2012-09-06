@@ -61,13 +61,10 @@ function mm_feed_sanitize($text) {
 	$mb = Message_Manager::$message_details_mb;
 	$mb->the_meta();
 	
-	$date = strip_tags($mb->get_the_value('date'));
-	$parts = explode('-', $date);
-	if ($parts >= 3) {
-		$date = mktime(0, 0, 0, $parts[1], $parts[2], $parts[0]);
-		$date = date('D, d M Y H:i:s O', $date);
-	} else {
-		$date == null;
+	$orig_date = strip_tags($mb->get_the_value('date'));
+	$date = Message_Manager::format_date($orig_date, 'D, d M Y H:i:s O');
+	if ($date == $orig_date) {
+		$date = null;
 	}
 	
 	$summary = $mb->get_the_value('summary');
@@ -81,7 +78,7 @@ function mm_feed_sanitize($text) {
 	$topics = mm_feed_sanitize( get_the_term_list(get_the_ID(), Message_Manager::$tax_topics, '', ', ', '' ));
 	$topic = mm_feed_sanitize( $topics ) ? sprintf( '<itunes:keywords>%s</itunes:keywords>', $topics ) : null;
 	
-	$image = Message_Manager::get_the_image(get_the_ID(), 'full');
+	$image = Message_Manager::get_the_image_rss(get_the_ID(), 'full');
 	$image = preg_replace('/^https/i', 'http', $image);
 	
 	$mb = Message_Manager::$message_media_mb;

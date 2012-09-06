@@ -9,7 +9,7 @@
  * This class is derived from My-Meta-Box (https://github.com/bainternet/My-Meta-Box script) which is 
  * a class for creating custom meta boxes for WordPress. 
  * 
- * @version 1.8.5
+ * @version 1.9.0
  * @copyright 2012 Ohad Raz 
  * @author Ohad Raz (email: admin@bainternet.info)
  * @link http://en.bainternet.info
@@ -110,7 +110,7 @@ class MM_Tax_Meta_Class {
     $this->_Local_images = (isset($meta_box['local_images'])) ? true : false;
     $this->add_missed_values();
     
-    $this->SelfPath = Message_Manager::$url . '/includes/tax-meta-class';
+    $this->SelfPath = Message_Manager::$url . 'includes/tax-meta-class';
     
     // Add Actions
     add_action( 'admin_init', array( &$this, 'add' ) );
@@ -147,9 +147,10 @@ class MM_Tax_Meta_Class {
       $this->check_field_date();
       $this->check_field_time();
       // Enqueue Meta Box Style
-      wp_enqueue_style( 'tax-meta-clss', $plugin_path . '/css/tax-meta-class.css' );
+      wp_enqueue_style( 'tax-meta-clss', $plugin_path . '/css/Tax-meta-class.css' );
       // Enqueue Meta Box Scripts
       wp_enqueue_script( 'tax-meta-clss', $plugin_path . '/js/tax-meta-clss.js', array( 'jquery' ), null, true );
+    
     }
     
   }
@@ -1056,7 +1057,7 @@ class MM_Tax_Meta_Class {
   public function save( $term_id ) {
     
     if ( ! isset( $term_id )                            // Check Revision
-    || ( ! array_key_exists('taxonomy', $_POST) )       // Check if taxonomy is in post
+    || ( ! isset( $_POST['taxonomy'] ) )              // Check if current taxonomy type is set.
     || ( ! in_array( $_POST['taxonomy'], $this->_meta_box['pages'] ) )              // Check if current taxonomy type is supported.
     || ( ! check_admin_referer( basename( __FILE__ ), 'MM_Tax_Meta_Class_nonce') )    // Check nonce - Security
     || ( ! current_user_can('manage_categories') ) )                 // Check permission
@@ -1283,7 +1284,7 @@ class MM_Tax_Meta_Class {
     $this->_meta_box = array_merge( array( 'context' => 'normal', 'priority' => 'high', 'pages' => array( 'post' ) ),(array)$this->_meta_box );
 
     // Default values for fields
-    foreach ( $this->_fields as &$field ) {
+    foreach ( (array)$this->_fields as $field ) {
       
       $multiple = in_array( $field['type'], array( 'checkbox_list', 'file', 'image' ) );
       $std = $multiple ? array() : '';
@@ -1377,7 +1378,7 @@ class MM_Tax_Meta_Class {
    *  @param $args mixed|array
    */
   public function addField($id,$args){
-    $new_field = array('id'=> $id,'std' => '','desc' => '','style' =>'');
+    $new_field = array('id'=> $id,'std' => '','desc' => '','style' =>'','multiple' => false);
     $new_field = array_merge($new_field, $args);
     $this->_fields[] = $new_field;
   }
@@ -1397,7 +1398,7 @@ class MM_Tax_Meta_Class {
    *   @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addText($id,$args,$repeater=false){
-    $new_field = array('type' => 'text','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Text Field');
+    $new_field = array('type' => 'text','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Text Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1420,7 +1421,7 @@ class MM_Tax_Meta_Class {
    *   @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addHidden($id,$args,$repeater=false){
-    $new_field = array('type' => 'hidden','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Text Field');
+    $new_field = array('type' => 'hidden','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Text Field', 'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1439,7 +1440,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addParagraph($id,$args,$repeater=false){
-    $new_field = array('type' => 'paragraph','id'=> $id,'value' => '','style' =>'');
+    $new_field = array('type' => 'paragraph','id'=> $id,'value' => '','style' =>'', 'std' => '', 'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1462,7 +1463,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addCheckbox($id,$args,$repeater=false){
-    $new_field = array('type' => 'checkbox','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Checkbox Field');
+    $new_field = array('type' => 'checkbox','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Checkbox Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1489,7 +1490,7 @@ class MM_Tax_Meta_Class {
    *   which means the last param as false to get the values in an array
    */
   public function addCheckboxList($id,$options,$args,$repeater=false){
-    $new_field = array('type' => 'checkbox_list','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Checkbox List Field');
+    $new_field = array('type' => 'checkbox_list','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Checkbox List Field', 'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1513,7 +1514,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addTextarea($id,$args,$repeater=false){
-    $new_field = array('type' => 'textarea','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Textarea Field');
+    $new_field = array('type' => 'textarea','id'=> $id,'std' => '','desc' => '','style' =>'','name' => 'Textarea Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1563,7 +1564,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default)
    */
   public function addRadio($id,$options,$args,$repeater=false){
-    $new_field = array('type' => 'radio','id'=> $id,'std' => array(),'desc' => '','style' =>'','name' => 'Radio Field','options' => $options);
+    $new_field = array('type' => 'radio','id'=> $id,'std' => array(),'desc' => '','style' =>'','name' => 'Radio Field','options' => $options,'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1587,7 +1588,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addDate($id,$args,$repeater=false){
-    $new_field = array('type' => 'date','id'=> $id,'style' =>'','std' => '','desc' => '','format'=>'d MM, yy','name' => 'Date Field');
+    $new_field = array('type' => 'date','id'=> $id,'style' =>'','std' => '','desc' => '','format'=>'d MM, yy','name' => 'Date Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1611,7 +1612,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addTime($id,$args,$repeater=false){
-    $new_field = array('type' => 'time','id'=> $id,'std' => '','style' =>'','desc' => '','format'=>'hh:mm','name' => 'Time Field');
+    $new_field = array('type' => 'time','id'=> $id,'std' => '','style' =>'','desc' => '','format'=>'hh:mm','name' => 'Time Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1634,7 +1635,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addColor($id,$args,$repeater=false){
-    $new_field = array('type' => 'color','id'=> $id,'std' => '','style' =>'','desc' => '','name' => 'ColorPicker Field');
+    $new_field = array('type' => 'color','id'=> $id,'std' => '','style' =>'','desc' => '','name' => 'ColorPicker Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1656,7 +1657,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default) 
    */
   public function addImage($id,$args,$repeater=false){
-    $new_field = array('type' => 'image','id'=> $id,'desc' => '','style' =>'','name' => 'Image Field');
+    $new_field = array('type' => 'image','id'=> $id,'desc' => '','style' =>'','name' => 'Image Field', 'std' => '','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1678,7 +1679,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default)
    */
   public function addFile($id,$args,$repeater=false){
-    $new_field = array('type' => 'file','id'=> $id,'desc' => '','name' => 'File Field');
+    $new_field = array('type' => 'file','id'=> $id,'desc' => '','name' => 'File Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1702,7 +1703,7 @@ class MM_Tax_Meta_Class {
    *  @param $repeater bool  is this a field inside a repeatr? true|false(default)
    */
   public function addWysiwyg($id,$args,$repeater=false){
-    $new_field = array('type' => 'wysiwyg','id'=> $id,'std' => '','desc' => '','style' =>'width: 300px; height: 400px','name' => 'WYSIWYG Editor Field');
+    $new_field = array('type' => 'wysiwyg','id'=> $id,'std' => '','desc' => '','style' =>'width: 300px; height: 400px','name' => 'WYSIWYG Editor Field','multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1734,7 +1735,7 @@ class MM_Tax_Meta_Class {
     $type = 'select';
     $temp = array('taxonomy' => $tax,'type' => $type,'args' => $q);
     $options = array_merge($temp,$options);
-    $new_field = array('type' => 'taxonomy','id'=> $id,'desc' => '','name' => 'Taxonomy Field','options'=> $options);
+    $new_field = array('type' => 'taxonomy','id'=> $id,'desc' => '','name' => 'Taxonomy Field','options'=> $options,'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;
@@ -1764,7 +1765,7 @@ class MM_Tax_Meta_Class {
     $q = array('posts_per_page' => -1);
     $temp = array('post_type' =>'post','type'=>'select','args'=>$q);
     $options = array_merge($temp,$options);
-    $new_field = array('type' => 'posts','id'=> $id,'desc' => '','name' => 'Posts Field','options'=> $options);
+    $new_field = array('type' => 'posts','id'=> $id,'desc' => '','name' => 'Posts Field','options'=> $options,'multiple' => false);
     $new_field = array_merge($new_field, $args);
     if(false === $repeater){
       $this->_fields[] = $new_field;

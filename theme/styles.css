@@ -1,1 +1,43 @@
 /* Message Manager Styles */
+
+.message_manager a {
+	color: gray;
+	display: block;
+}
+
+.message_manager h4 {
+	font-size: 110%;
+	display: block;
+	font-style:italic;
+	color: #222;
+}
+
+.message_manager .message_manager_series_box {
+	margin-bottom: 2em;	
+}
+
+.message_manager .message_manager_series_box h4 {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.message_manager_series .message_manager_series_box span {
+	display: block;
+	font-size: 90%;
+	color: gray;
+}
+
+.message_manager_series .message_manager_message_box {
+	margin-bottom: 2em;	
+}
+
+.message_manager_series .message_manager_message_box h4 {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.message_manager_series .message_manager_message_box span {
+	display: block;
+	font-size: 90%;
+	color: gray;
+}
