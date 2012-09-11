@@ -1,171 +1,104 @@
 <?php
-
 class Message_Manager_Options {
 	
-	public static $prefix = 'mm_option_';
+	public static $option_group = 'message_manager';
+	
+	public static $defaults = array();
 	
 	function __construct() {
-		add_action('admin_init', array($this, 'register'));
-		add_action('admin_menu', array($this, 'menu'));
-	}
-	
-	function register() {
-		$this->register_option('base-name');
-		$this->register_option('podcast-title');
-		$this->register_option('podcast-subtitle');
-		$this->register_option('podcast-link');
-		$this->register_option('podcast-language');
-		$this->register_option('podcast-copyright');
-		$this->register_option('podcast-author');
-		$this->register_option('podcast-keywords');
-		$this->register_option('podcast-description');
-		$this->register_option('podcast-owner-name');
-		$this->register_option('podcast-owner-email');
-		$this->register_option('podcast-image');
-		$this->register_option('podcast-categories');
-	}
-	
-	function register_option($option, $callback = false) {
-		register_setting(Message_Manager::$cpt_message, Message_Manager_Options::get_with_prefix($option), $callback);
-	}
-	
-	function menu() {
-		add_submenu_page('edit.php?post_type='.Message_Manager::$cpt_message, "Message Manager Settings", "Settings", 'manage_options', Message_Manager::$cpt_message, array($this, 'options_page'));
-	}
-	
-	public static function get_with_prefix($option) {
-		return Message_Manager_Options::$prefix.$option;
+		require_once  Message_Manager::$path . 'includes/admin-page-class/admin-page-class.php';
+		
+		$options_panel = new MM_Admin_Page_Class(array(
+			'menu'=> 'edit.php?post_type='.Message_Manager::$cpt_message,
+			'page_title' => 'Settings',
+			'capability' => 'manage_options',
+			'option_group' => Message_Manager_Options::$option_group,
+			'id' => 'message-manager-options',
+			'fields' => array()
+		));
+		$options_panel->OpenTabs_container('');
+		
+		/**
+		 * define your admin page tabs listing
+		 */
+		$options_panel->TabsListing(array(
+			'links' => array(
+				'general' =>  __('General'),
+				'podcasting' =>  __('Podcasting'),
+			)
+		));
+		
+		// the general tab
+		$options_panel->OpenTab('general');
+		$options_panel->Title("General");
+		$options_panel->addText('slug', array('name'=> 'Base Slug', 'std'=> Message_Manager_Options::get('messages'), 'desc'=>'Enter the location of where messages should show up on your site. For example, the current value will display the messages at ' . get_site_url() .'/'.Message_Manager_Options::get('slug')));
+		$options_panel->addImage('default-message-image', array('name'=> 'Default Message Image (16:9)','preview_height' => '124px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a message does not have a featured image. For best results, the image should be 16:9.'));
+		$options_panel->addImage('default-message-image-square', array('name'=> 'Default Message Image (Square)','preview_height' => '220px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed in the message archive if a message does not have a featured image. For best results, the image should be square(1:1).'));
+		$options_panel->addImage('default-series-image', array('name'=> 'Default Series Image (Square)','preview_height' => '220px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a series does not have an image. For best results, the image should be square(1:1).'));
+		$options_panel->CloseTab();
+		
+		// the podcasting tab
+		$options_panel->OpenTab('podcasting');
+		$options_panel->Title("Podcasting");
+		$options_panel->addText('podcast-title', array('name'=> 'Channel Title', 'std'=> Message_Manager_Options::get('podcast-title'), 'desc'=>'The title of your podcast channel.'));
+		$options_panel->addText('podcast-subtitle', array('name'=> 'Channel Subtitle', 'std'=> Message_Manager_Options::get('podcast-subtitle'), 'desc'=>'The subtitle of your podcast channel.'));
+		$options_panel->addText('podcast-link', array('name'=> 'Channel Link', 'std'=> Message_Manager_Options::get('podcast-link'), 'desc'=>'The URL of your site or message area.'));
+		$options_panel->addText('podcast-language', array('name'=> 'Language', 'std'=> Message_Manager_Options::get('podcast-language'), 'desc'=>'The language of your padcast channel. See <a href="http://www.rssboard.org/rss-language-codes">here</a> for valid language codes.'));
+		$options_panel->addText('podcast-copyright', array('name'=> 'Copyright', 'std'=> Message_Manager_Options::get('podcast-copyright'), 'desc'=>'The copyright information of your podcast content.'));
+		$options_panel->addText('podcast-author', array('name'=> 'Author', 'std'=> Message_Manager_Options::get('podcast-author')));
+		$options_panel->addText('podcast-keywords', array('name'=> 'Keywords', 'std'=> Message_Manager_Options::get('podcast-keywords'), 'desc'=>'A comma seperated list of keywords for your channel.'));
+		$options_panel->addTextarea('podcast-description', array('name'=> 'Description', 'std'=> Message_Manager_Options::get('podcast-description')));
+		$options_panel->addText('podcast-owner-name', array('name'=> 'Owner Name', 'std'=> Message_Manager_Options::get('podcast-owner-name'), 'desc'=>'The name of the podcast owner. Will likly be the same as Author.'));
+		$options_panel->addText('podcast-owner-email', array('name'=> 'Owner Email', 'std'=> Message_Manager_Options::get('podcast-owner-email'), 'desc'=>'The copyright information of your podcast content.'));
+		$options_panel->addImage('podcast-image', array('name'=> 'Image ','preview_height' => '200px', 'preview_width' => '200px', 'desc'=>'The podcast channel\'s image. For best results, the image should be square(1:1).'));
+		$options_panel->addTextarea('podcast-categories', array('name'=> 'Categories', 'std'=> Message_Manager_Options::get('podcast-categories'), 'desc'=>'Specify each top category as a new line. You may add subcategories by using the => operator and then specifying a comma seperated list.'));
+		$options_panel->CloseTab();
 	}
 	
 	public static function set($name, $value) {
-		return update_option(Message_Manager_Options::get_with_prefix($name), $value);
+		$options = get_option(Message_Manager_Options::$option_group, array());
+		$options[$name] = $value;
+		return update_option(Message_Manager_Options::$option_group, $options);
 	}
 	
 	public static function get($name, $default = false) {
-		return get_option(Message_Manager_Options::get_with_prefix($name), $default);
+		$options = get_option(Message_Manager_Options::$option_group, array());
+		
+		if(!isset($options[$name])) {
+			
+			$defaults = array(
+				'slug' => 'messages',
+				'podcast-title' => get_bloginfo_rss('name'),
+				'podcast-subtitle' => get_bloginfo_rss('description'),
+				'podcast-link' => home_url('/'),
+				'podcast-language' => get_bloginfo_rss('language'),
+				'podcast-copyright' => '&#x2117; &amp; &#xA9; ' . get_bloginfo_rss('name'),
+				'podcast-author' => get_bloginfo_rss('name'),
+				'podcast-description' => get_bloginfo_rss('description'),
+				'podcast-owner-name' => get_bloginfo_rss('name'),
+				'podcast-owner-email' => get_bloginfo_rss('admin_email'),
+				'podcast-categories' => 'Religion & Spirituality => Christianity, Spirituality'
+			);
+			
+			if (isset($defaults[$name])) {
+				return $defaults[$name];
+			}
+		} else {
+			return $options[$name];
+		}
+		
+		return $default;
 	}
 	
 	public static function delete($name) {
-		return delete_option(Message_Manager_Options::get_with_prefix($name));
-	}
-	
-	function options_page() {
-		if (!current_user_can('manage_options')) {
-			wp_die( __('You do not have sufficient permissions to access this page.') );
-		}
+		$options = get_option(Message_Manager_Options::$option_group, array());
+		unset($options[$name]);
 		
-		function get_name($option) {
-			return Message_Manager_Options::get_with_prefix($option);
-		}
-		
-		function name($option) {
-			echo get_name($option);
-		}
-		
-		function option($option, $default = false) {
-			echo get_option(get_name($option), $default);
-		}
-		
-		if (array_key_exists('settings-updated', $_REQUEST)) {
-			flush_rewrite_rules(false);
-		}
-	?>
-	
-		<div class="wrap">
-		    <?php screen_icon(); ?>	
+		if (!empty($options)) {
+			return update_option(Message_Manager_Options::$option_group, $options);
 			
-		    <h2>Message Manager Options</h2>
-		    
-		    <form action="options.php" method="post" id="mm-options-form" name="mm-options-form">
-		    	<?php settings_fields(Message_Manager::$cpt_message); ?>
-	
-				<h3>Permalinks</h3>
-				<table class="form-table">
-					<tr>
-						<th scope="row"><label for="<?php name('base-name'); ?>">Base Name:</label></th>
-						<td><span class="description" style="margin-right: 2px;"><?php echo get_site_url(); ?>/</span><input type="text" name="<?php name('message-slug'); ?>" value="<?php option('message-slug', 'messages'); ?>" class="regular-text" />
-							<p class="description">Enter the location of where messages should show up on your site.</p>
-						</td>
-					</tr>
-				</table>
-				
-				<h3>Podcasting</h3>
-				<table class="form-table">
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-title'); ?>">Title:</label></th>
-						<td><input type="text" name="<?php name('podcast-title'); ?>" value="<?php option('podcast-title', get_bloginfo_rss('name') . ' ' . get_bloginfo_rss()); ?>" class="regular-text" />
-							<p class="description">The title of your podcast channel.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-subtitle'); ?>">Subtitle:</label></th>
-						<td><input type="text" name="<?php name('podcast-subtitle'); ?>" value="<?php option('podcast-subtitle', get_bloginfo('description')); ?>" class="regular-text" />
-							<p class="description">The podcast subtitle.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-link'); ?>">Link:</label></th>
-						<td><input type="text" name="<?php name('podcast-link'); ?>" value="<?php option('podcast-link', home_url('/')); ?>" class="regular-text" />
-							<p class="description">The link for your podcast channel.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-language'); ?>">Language:</label></th>
-						<td><input type="text" name="<?php name('podcast-language'); ?>" value="<?php option('podcast-language', get_bloginfo_rss('language')); ?>" class="regular-text" />
-							<p class="description">The language of your padcast channel. See <a href="http://www.rssboard.org/rss-language-codes">here</a> for valid language codes.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-copyright'); ?>">Copyright:</label></th>
-						<td><input type="text" name="<?php name('podcast-copyright'); ?>" value="<?php option('podcast-copyright', '&#x2117; &amp; &#xA9; ' . get_bloginfo_rss('name')); ?>" class="regular-text" />
-							<p class="description">The copyright information of your podcast content.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-author'); ?>">Author:</label></th>
-						<td><input type="text" name="<?php name('podcast-author'); ?>" value="<?php option('podcast-author', get_bloginfo_rss('name')); ?>" class="regular-text" />
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-keywords'); ?>">Keywords:</label></th>
-						<td><input type="text" name="<?php name('podcast-keywords'); ?>" value="<?php option('podcast-keywords'); ?>" class="regular-text" />
-							<p class="description">A comma seperated list of keywords for your channel.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-description'); ?>">Description:</label></th>
-						<td><textarea name="<?php name('podcast-description'); ?>" class="regular-text"><?php option('podcast-description', get_bloginfo_rss('description')); ?></textarea>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-owner-name'); ?>">Owner Name:</label></th>
-						<td><input type="text" name="<?php name('podcast-owner-name'); ?>" value="<?php option('podcast-owner-name', get_bloginfo_rss('name')); ?>" class="regular-text" />
-							<p class="description">The name of the podcast owner. Will likly be the same as Author.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-owner-email'); ?>">Owner Email:</label></th>
-						<td><input type="text" name="<?php name('podcast-owner-email'); ?>" value="<?php option('podcast-owner-email', get_bloginfo_rss('admin_email')); ?>" class="regular-text" />
-							<p class="description">The email address of the owner.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-image'); ?>">Image:</label></th>
-						<td><input type="text" name="<?php name('podcast-image'); ?>" value="<?php option('podcast-image'); ?>" class="regular-text" />
-							<p class="description">The podcast channel's image.</p>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><label for="<?php name('podcast-categories'); ?>">Categories:</label></th>
-						<td><textarea name="<?php name('podcast-categories'); ?>" class="regular-text"><?php option('podcast-categories', 'Religion & Spirituality => Christianity, Spirituality'); ?></textarea>
-							<p class="description">Specify each top category as a new line. You may add subcategories by using the => operator and then specifying a comma seperated list.</p>
-						</td>
-					</tr>
-				</table>
-				
-				<p class="submit"><input type="submit" name="submit" id="submit" class="button-primary" value="Save Changes"></p>
-			</form>
-		</div>
-	<?php	
+		} else {
+			return delete_option(Message_Manager_Options::$option_group);
+		}
 	}
 }

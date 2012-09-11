@@ -18,6 +18,8 @@ require_once 'includes/tax-meta-class/tax-meta-class.php';
 require_once 'includes/wpalchemy/MetaBox.php';
 require_once 'includes/wpalchemy/MediaAccess.php';
 
+require_once 'message-manager-widget.php';
+
 $wpalchemy_media_access = new MMWPAlchemy_MediaAccess();
 
 class Message_Manager {
@@ -87,6 +89,9 @@ class Message_Manager {
 		add_action('pre_get_posts', array($this, 'sort_messages_by_sermon_date'));
 		add_filter('pre_option_posts_per_rss', array($this, 'show_all_messages_in_podcast'));
 
+		// register the widget
+		add_action('widgets_init', array($this, 'register_widget'));
+		
 		// set up the options page
 		new Message_Manager_Options();
 
@@ -373,7 +378,7 @@ class Message_Manager {
 	function rewrite_rules_array($rules) {
 		$mm_rules = array();
 		
-		$message_base = Message_Manager_Options::get('message-base', 'messages');
+		$message_base = Message_Manager_Options::get('slug');
 		
 		// messages
 		$mm_rules[$message_base.'/?$'] =  'index.php?post_type='.Message_Manager::$cpt_message;
@@ -446,7 +451,6 @@ class Message_Manager {
 	function sort_messages_by_sermon_date($query) {
 		if($query->is_main_query() && !is_admin() && is_post_type_archive(Message_Manager::$cpt_message)) {			
 			$meta_key = Message_Manager::$meta_prefix . 'details_date';
-			
 			$query->set('meta_key', $meta_key);
 			$query->set('meta_value', date('yy-mm-dd'));
 			$query->set('meta_compare', '>=');
@@ -958,20 +962,25 @@ class Message_Manager {
 			if (!empty($attachment_id)) {
 				echo get_image_tag($attachment_id, $alt, $title, null, $size);
 			} else {
-				if ($size == $type) {
-					$src= Message_Manager::find_theme_url('default-message.png');
+				$image = null;
+				if ($size == Message_Manager::$tax_series) {
+					$image = Message_Manager_Options::get('default-message-image-square');
 				} else {
-					$src= Message_Manager::find_theme_url('default-message-square.png');
+					$image = Message_Manager_Options::get('default-message-image');
 				}
-				echo "<img src=\"$src\" alt=\"$alt\" title=\"$title\" />";
+				if (!empty($image)) {
+					echo get_image_tag($image['id'], $alt, $title, null, $size);
+				}
 			}
 		} else if ($type == Message_Manager::$tax_series) {
 			$meta = get_tax_meta($item['term_id'], Message_Manager::$meta_prefix.'series_image');
 			if (!empty($meta)) {
 				echo get_image_tag($meta[id], $alt, $title, null, $size);
 			} else {
-				$src = Message_Manager::find_theme_url('default-series.png');
-				echo "<img src=\"$src\" alt=\"$alt\" title=\"$title\" />";
+				$image = Message_Manager_Options::get('default-series-image');
+				if (!empty($image)) {
+					echo get_image_tag($image['id'], $alt, $title, null, $size);
+				}
 			}
 		}
 		
@@ -1236,6 +1245,10 @@ class Message_Manager {
 	
 	public static function the_verse($message) {
 		
+	}
+	
+	function register_widget() {
+		register_widget( 'Message_Manager_Widget' );
 	}
 }
 

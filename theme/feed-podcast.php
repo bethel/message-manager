@@ -33,7 +33,11 @@ function mm_feed_sanitize($text) {
 			<itunes:email><?php echo esc_html(Message_Manager_Options::get('podcast-owner-email', get_bloginfo_rss('admin_email'))); ?></itunes:email>
 		</itunes:owner>
 		<itunes:explicit>no</itunes:explicit>
-		<?php if (Message_Manager_Options::get('podcast-image')): ?><itunes:image href="<?php echo esc_url(preg_replace('/^https/i', 'http', Message_Manager_Options::get('podcast-image'))); ?>" /><?php endif; ?>
+		<?php if (Message_Manager_Options::get('podcast-image')): 
+			$image = Message_Manager_Options::get('podcast-image');
+			$src = wp_get_attachment_image_src($image['id'], 'full');
+			if (!empty($src)):
+		?><itunes:image href="<?php echo esc_url(preg_replace('/^https/i', 'http', $src[0])); ?>" /><?php endif; endif; ?>
 		
 		<itunes:keywords><?php echo esc_html(Message_Manager_Options::get('podcast-keywords')); ?></itunes:keywords>
 		<?php 
@@ -76,7 +80,10 @@ function mm_feed_sanitize($text) {
 	$speakers = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_speaker, '', ' &amp; ', ''));
 	$series = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_series, '', ' &amp; ', ''));
 	$topics = mm_feed_sanitize( get_the_term_list(get_the_ID(), Message_Manager::$tax_topics, '', ', ', '' ));
-	$topic = mm_feed_sanitize( $topics ) ? sprintf( '<itunes:keywords>%s</itunes:keywords>', $topics ) : null;
+	$topic = null;
+	if (!empty($topics)) {
+		$topic = mm_feed_sanitize( $topics ) ? sprintf( '<itunes:keywords>%s</itunes:keywords>', $topics ) : null;
+	}
 	
 	$image = Message_Manager::get_the_image_rss(get_the_ID(), 'full');
 	$image = preg_replace('/^https/i', 'http', $image);
@@ -107,14 +114,14 @@ function mm_feed_sanitize($text) {
 			<itunes:author><?php echo $speakers; ?></itunes:author>
 			<itunes:subtitle><?php echo $series; ?></itunes:subtitle>
 			<itunes:summary><?php echo $summary; ?></itunes:summary>
-			<?php if ($date): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
+			<?php if (!empty($date)): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
 			
 			<enclosure url="<?php echo esc_url($audio_url); ?>" length="<?php echo $audio_size; ?>" type="audio/mpeg" />
 			<guid><?php echo esc_url($audio_url); ?></guid>
 			<itunes:duration><?php echo esc_html($audio_duration); ?></itunes:duration>
-			<?php if ($image) : ?><itunes:image href="<?php echo $image; ?>" /><?php endif; ?>
+			<?php if (!empty($image)) : ?><itunes:image href="<?php echo $image; ?>" /><?php endif; ?>
 			
-			<?php if ( $topic ) : ?><?php echo $topic . "\n" ?><?php endif; ?>
+			<?php if (!empty($topic)) : ?><?php echo $topic . "\n" ?><?php endif; ?>
 		</item>
 <?php endif; endwhile; endif;  ?>
 	</channel>

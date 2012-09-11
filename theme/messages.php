@@ -11,6 +11,33 @@ $items = Message_Manager::get_items_from_posts(true);
 			
 				<div id="main" class="twelve columns clearfix" role="main">
 					<h1>Messages</h1>
+					
+					<div class="row">
+					
+					<div class="four columns">
+					
+					Recent Message
+					
+					</div>
+					
+					<div class="four columns">
+					
+					Bethel Live
+					
+					</div>
+					
+					<div class="four columns">
+					
+					Podcast Info
+					
+					</div>
+					
+					
+					</div>
+					
+					<hr>
+					
+					<h3>Past Messages</h3>
 			
 					<?php
 					$i = 1;
