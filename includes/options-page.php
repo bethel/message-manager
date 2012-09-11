@@ -31,7 +31,7 @@ class Message_Manager_Options {
 		// the general tab
 		$options_panel->OpenTab('general');
 		$options_panel->Title("General");
-		$options_panel->addText('slug', array('name'=> 'Base Slug', 'std'=> Message_Manager_Options::get('messages'), 'desc'=>'Enter the location of where messages should show up on your site. For example, the current value will display the messages at ' . get_site_url() .'/'.Message_Manager_Options::get('slug')));
+		$options_panel->addText('slug', array('name'=> 'Base Slug', 'std'=> Message_Manager_Options::get('slug'), 'desc'=>'Enter the location of where messages should show up on your site. For example, the current value will display the messages at ' . get_site_url() .'/'.Message_Manager_Options::get('slug')));
 		$options_panel->addImage('default-message-image', array('name'=> 'Default Message Image (16:9)','preview_height' => '124px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a message does not have a featured image. For best results, the image should be 16:9.'));
 		$options_panel->addImage('default-message-image-square', array('name'=> 'Default Message Image (Square)','preview_height' => '220px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed in the message archive if a message does not have a featured image. For best results, the image should be square(1:1).'));
 		$options_panel->addImage('default-series-image', array('name'=> 'Default Series Image (Square)','preview_height' => '220px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a series does not have an image. For best results, the image should be square(1:1).'));
