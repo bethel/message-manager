@@ -1250,6 +1250,31 @@ class Message_Manager {
 	function register_widget() {
 		register_widget( 'Message_Manager_Widget' );
 	}
+	
+	public static function get_latest_message() {
+		$meta_key = Message_Manager::$meta_prefix . 'details_date';
+		
+		$messages = get_posts(array(
+			'numberposts' => 1,
+			'post_type' => Message_Manager::$cpt_message,
+			'post_status' => 'publish',
+			'meta_key' => $meta_key,
+			'meta_value' => date('yy-mm-dd'),
+			'meta_compare' => '>=',
+			'orderby' => 'meta_value',
+			'order' => 'DESC',
+		));
+		
+		$items = Message_Manager::get_items_from_posts(false, $messages);
+		if (count($items) > 0) {
+			return array_shift($items);	
+		}
+		return null;
+	}
+	
+	public static function the_podcast_url() {
+		return home_url(Message_Manager_Options::get(slug).'/podcast');	
+	}
 }
 
 // initialize the plugin

@@ -7,65 +7,89 @@ $items = Message_Manager::get_items_from_posts(true);
 ?>
 <?php get_header(); ?>
 
-			<div id="content" class="clearfix message_manager">
-			
-				<div id="main" class="twelve columns clearfix" role="main">
-					<h1>Messages</h1>
+<div id="content" class="clearfix message_manager">
+
+	<div id="main" class="twelve columns clearfix" role="main">
+		<h1>Messages</h1>
+
+
+			<div class="four columns">
+
+				<div class="panel">
 					
-					<div class="row">
+					<h5>Latest Message</h5>
 					
-					<div class="four columns">
+					<?php $latest = Message_Manager::get_latest_message(); ?>
 					
-					Recent Message
-					
-					</div>
-					
-					<div class="four columns">
-					
-					Bethel Live
-					
-					</div>
-					
-					<div class="four columns">
-					
-					Podcast Info
-					
-					</div>
-					
-					
-					</div>
-					
-					<hr>
-					
-					<h3>Past Messages</h3>
-			
-					<?php
-					$i = 1;
-					while(!empty($items)):
-					$item = array_shift($items);
-					$end = empty($items);
-					?>
-					
-					<div class="three columns<?php echo ($end)? ' end' : ''; ?> message_manager_series_box">
-		
-						<a href="<?php Message_Manager::the_link($item); ?>">
-							<?php Message_Manager::the_image($item, Message_Manager::$tax_series); ?>
-							<h4><?php Message_Manager::the_title($item); ?></h4>
-							<span><?php Message_Manager::the_date($item); ?></span>
-						</a>
-		
-					</div>
-			
-					<?php if(!($i % 4) || $end): ?>
-					<div class="clearfix"></div>
-					<?php endif;?>
-					
-					<?php $i++; endwhile; ?>
-			
+					<a href="<?php Message_Manager::the_link($latest); ?>"> <?php Message_Manager::the_image($latest, 'bethel-home-box'); ?>
+						<h4>
+							<?php Message_Manager::the_title($latest); ?>
+						</h4> <span><?php Message_Manager::the_date($latest); ?> </span>
+					</a>
+
 				</div>
-				<!-- end #main -->
-			
+
 			</div>
-			<!-- end #content -->
+
+			<div class="four columns">
+
+				<div class="panel">
+					<h5>Bethel Live</h5>
+					<p>TODO: Graphic</p>			
+					<p>Each Sunday, services are broadcast live at both 9:00 a.m. and 10:45 a.m.</p>
+				</div>
+
+			</div>
+
+			<div class="four columns end">
+
+				<div class="panel">
+					<h5>Subscribe</h5>
+					
+					<ul><li> Subscribe using <a target="_blank" title="Subscribe to Podcast in   iTunes" href="http://itunes.apple.com/podcast/bethel-church-fargo-nd-sermons/id360529763">iTunes</a></li>
+					<li>Subscribe using <a title="Subscribe to sermons RSS feed podcast" href="http://feeds.feedburner.com/bethelchurchsermons" target="_blank">RSS</a>&nbsp;</li>
+					<li>Subscribe by <a href="http://feedburner.google.com/fb/a/mailverify?uri=bethelchurchsermons&amp;loc=en_US">email</a> </li>
+					</ul>
+					
+					<p>Visit our <a href="<?php echo home_url('/podcast'); ?>" title="Podcast">podcast page</a> if you have questions about podcasting.</p>
+					<p>Sermons can also be heard on LIFE 97.9 FM, Sundays at 8:30 a.m. and on FAITH 1200 AM Sundays at 9:00 a.m. and 8:00 p.m.</p>
+				</div>
+
+			</div>
+			
+			<hr>
+
+		
+
+		<h3>All Messages</h3>
+
+		<?php
+		$i = 1;
+		while(!empty($items)):
+		$item = array_shift($items);
+		$end = empty($items);
+		?>
+
+		<div class="three columns<?php echo ($end)? ' end' : ''; ?> message_manager_series_box">
+
+			<a href="<?php Message_Manager::the_link($item); ?>"> <?php Message_Manager::the_image($item, Message_Manager::$tax_series); ?>
+				<h4>
+					<?php Message_Manager::the_title($item); ?>
+				</h4> <span><?php Message_Manager::the_date($item); ?> </span>
+			</a>
+
+		</div>
+
+		<?php if(!($i % 4) || $end): ?>
+		<div class="clearfix"></div>
+		<?php endif;?>
+
+		<?php $i++; endwhile; ?>
+
+	</div>
+	<!-- end #main -->
+
+</div>
+<!-- end #content -->
 
 <?php get_footer(); ?>

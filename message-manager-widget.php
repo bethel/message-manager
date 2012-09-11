@@ -13,26 +13,11 @@ class Message_Manager_Widget extends WP_Widget {
 		extract($args);
 		$title = apply_filters('widget_title', $instance['title']);
 		
-		$meta_key = Message_Manager::$meta_prefix . 'details_date';
-		
-		$messages = get_posts(array(
-			'numberposts' => 1,
-			'post_type' => Message_Manager::$cpt_message,
-			'post_status' => 'publish',
-			'meta_key' => $meta_key,
-			'meta_value' => date('yy-mm-dd'),
-			'meta_compare' => '>=',
-			'orderby' => 'meta_value',
-			'order' => 'DESC',
-		));
-		
-		$items = Message_Manager::get_items_from_posts(false, $messages);
-		
-		foreach ($items as $item) {
+		$item = Message_Manager::get_latest_message();
+		if (!empty($item)) {
 			if (!empty($item['post_title'])) {
 				$title = str_ireplace('{title}', strip_tags($item['post_title']), $title);
 			}
-			
 			include Message_Manager::find_theme_path('widget.php');
 		}
 	}
