@@ -21,7 +21,7 @@ $items = Message_Manager::get_items_from_posts(true);
 					
 					<?php $latest = Message_Manager::get_latest_message(); ?>
 					
-					<a href="<?php Message_Manager::the_link($latest); ?>"> <?php Message_Manager::the_image($latest, 'bethel-home-box'); ?>
+					<a href="<?php Message_Manager::the_link($latest); ?>"> <?php Message_Manager::the_image($latest, array('size'=>'bethel-home-box')); ?>
 						<h4>
 							<?php Message_Manager::the_title($latest); ?>
 						</h4> <span><?php Message_Manager::the_date($latest); ?> </span>
@@ -72,7 +72,7 @@ $items = Message_Manager::get_items_from_posts(true);
 
 		<div class="three columns<?php echo ($end)? ' end' : ''; ?> message_manager_series_box">
 
-			<a href="<?php Message_Manager::the_link($item); ?>"> <?php Message_Manager::the_image($item, Message_Manager::$tax_series); ?>
+			<a href="<?php Message_Manager::the_link($item); ?>"> <?php Message_Manager::the_image($item, array('size' => Message_Manager::$tax_series)); ?>
 				<h4>
 					<?php Message_Manager::the_title($item); ?>
 				</h4> <span><?php Message_Manager::the_date($item); ?> </span>

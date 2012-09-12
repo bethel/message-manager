@@ -40,3 +40,71 @@
 	font-size: 90%;
 	color: gray;
 }
+
+.message_manager_message .message-manager-meta {
+	display: block;
+	margin-bottom: 15px;
+}
+
+.message_manager_message .message-manager-title {
+	margin-top: 0px;
+}
+
+/* the series list */
+.message_manager_message h3 {
+	margin: 0;
+	margin-bottom: 14px;
+}
+
+
+.message-manager-series-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	-moz-border-radius: 5px;
+border-radius: 5px;
+}
+
+.message-manager-series-list li {
+	margin-top: 3px;
+	z-index: 100;
+	padding: 15px 20px 15px 15px;
+	line-height: 1em;
+	background-color: lightgray;
+	
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+
+.message-manager-series-list li a {
+	display: block;
+	color: black;
+}
+
+.message-manager-series-list li a h4 {
+	font-size: 16px;
+	margin: 0;
+}
+
+.message-manager-series-list li.active a h4 {
+	color: white;
+}
+
+.message-manager-series-list li span {
+	display:block;
+	color: #424242;
+}
+
+.message-manager-series-list li.active span {
+	color: lightgray;
+}
+
+.message-manager-series-list li.active {
+	background-color: #424242;
+	color: white;
+	
+	-moz-box-shadow: 2px 2px 2px #888;
+	-webkit-box-shadow: 2px 2px 2px #888;
+	box-shadow: 2px 2px 2px #888;
+}
