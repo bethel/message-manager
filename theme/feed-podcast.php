@@ -6,11 +6,24 @@
 require_once(Message_Manager::$path.'includes/encoding.php');
 
 function mm_feed_sanitize($text) {
-        $pattern[] = '/&nbsp;/';
+	
+		$text = strip_tags($text);
+	
+		$pattern[] = '/&nbsp;/';
         $replacement[] = ' ';
+        $pattern[] = '/&ldquo;/';
+        $replacement[] = '"';
+        $pattern[] = '/&rdquo;/';
+        $replacement[] = '"';
+        $pattern[] = '/&lsquo;/';
+        $replacement[] = "'";
+        $pattern[] = '/&rsquo;/';
+        $replacement[] = "'";
+        $pattern[] = '/&[^\s]*;/'; //catch all others
+        $replacement[] = "";
         $text = preg_replace($pattern, $replacement, $text);
-        $text = Encoding::fixUTF8(html_entity_decode(htmlspecialchars(strip_tags($text), ENT_NOQUOTES | ENT_HTML401), ENT_QUOTES | ENT_XML1));
-        return $text;
+        
+        return Encoding::fixUTF8($text);
 }
 
 ?>
@@ -73,9 +86,9 @@ function mm_feed_sanitize($text) {
 	
 	$summary = $mb->get_the_value('summary');
 	if (!$summary) {
-		$summary = get_the_excerpt();
+		$summary = get_the_content();
 	}
-	$summary = mm_feed_sanitize($summary);
+	$summary = mm_feed_sanitize(strip_tags($summary));
 	
 	$speakers = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_speaker, '', ' &amp; ', ''));
 	$series = mm_feed_sanitize(get_the_term_list(get_the_ID(), Message_Manager::$tax_series, '', ' &amp; ', ''));
@@ -131,7 +144,6 @@ function mm_feed_sanitize($text) {
 			<link><?php the_permalink() ?></link>
 			<description><?php echo $summary; ?></description>
 			<itunes:author><?php echo $speakers; ?></itunes:author>
-			<itunes:subtitle><?php echo $summary; ?></itunes:subtitle>
 			<itunes:summary><?php echo $summary; ?></itunes:summary>
 			<?php if (!empty($date)): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
 			
@@ -147,7 +159,6 @@ function mm_feed_sanitize($text) {
 		<item>
 			<title><?php echo get_the_title_rss() . ' - '; ?><?php echo empty($title)? mm_feed_sanitize(basename($url)): mm_feed_sanitize($title); ?></title>
 			<description><?php echo mm_feed_sanitize($description); ?></description>
-			<itunes:subtitle><?php echo mm_feed_sanitize($description); ?></itunes:subtitle>
 			<itunes:summary><?php echo mm_feed_sanitize($description); ?></itunes:summary>
 			<?php if (!empty($date)): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
 			
