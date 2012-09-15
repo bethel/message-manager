@@ -130,8 +130,9 @@ function mm_feed_sanitize($text) {
 			$pathinfo = pathinfo($attachment['url']);
 			
 			if (!empty($pathinfo['extension'])) {
-				if (strtolower($pathinfo['extension']) == 'pdf') {
+				if (strtolower($pathinfo['extension']) == 'pdf') {					
 					$attachment['size'] = Message_Manager::get_file_size($attachment['url']);
+					$attachment['url'] = $image = preg_replace('/^https/i', 'http', $attachment['url']);
 					$pdf_attachments[] = $attachment;
 				}
 			}
