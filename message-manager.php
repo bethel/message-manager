@@ -392,6 +392,9 @@ class Message_Manager {
 		// messages
 		$mm_rules[$message_base.'/?$'] =  'index.php?post_type='.Message_Manager::$cpt_message;
 		//$mm_rules[$message_base.'/page/?([0-9]{1,})/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&paged=$matches[1]';
+
+		$mm_rules[$message_base.'/podcast.rss/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=podcast';
+		$mm_rules[$message_base.'/feed/podcast.rss/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=podcast';
 		$mm_rules[$message_base.'/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=$matches[1]';
 		$mm_rules[$message_base.'/feed/(feed|rdf|rss|rss2|atom|podcast)/?$'] = 'index.php?post_type='.Message_Manager::$cpt_message.'&feed=$matches[1]';
 		
@@ -1307,8 +1310,19 @@ class Message_Manager {
 		<?php }
 	}
 	
-	public static function the_downloads($message) {
+	private static function get_the_mime_class($url) {
+		$mimes = array('ai','asf','bib','csv','deb','doc','docx','djvu','dmg','dwg','dwf','flac','gif','gz','indd','iso','jpg','log','m4v','midi','mkv','mov','mp3','mp4','mpeg','mpg','odp','ods','odt','oga','ogg','ogv','pdf','png','ppt','pptx','psd','ra','ram','rm','rpm','rv','skp','spx','tar','tex','tgz','txt','vob','wmv','xls','xlsx','xml','xpi','zip');
 		
+		$pathinfo = pathinfo($url);
+		if (!empty($pathinfo['extension'])) {
+			if(in_array($pathinfo['extension'], $mimes)) {
+				return ' class="mm-mime-icon mm-mime-' . $pathinfo['extension'] . '"';
+			}
+		}
+		return '';
+	}
+	
+	public static function the_downloads($message) {
 		echo '<ul class="message-manager-downloads">';
 		
 		if (!empty($message['attachments'])) {
@@ -1319,10 +1333,12 @@ class Message_Manager {
 				if (empty($url)) continue;
 								
 				if (empty($title)) $title = basename($url);
+
+				$mime_class = Message_Manager::get_the_mime_class($url);
 				
 				$url = Message_Manager::get_download_url($url, $message);
 				
-				echo '<li>';
+				echo "<li$mime_class>";
 				echo "<a href=\"$url\" title=\"$title\">$title</a>";
 				
 				if (!empty($description)) {
@@ -1334,7 +1350,8 @@ class Message_Manager {
 		
 		if (!empty($message['media'])) {
 			if ($message['media']['audio-attachment'] == 'yes' && !empty($message['media']['audio-url'])) {
-				echo '<li>';
+				$mime_class = Message_Manager::get_the_mime_class($message['media']['audio-url']);
+				echo "<li$mime_class>";
 				$title = "MP3 Audio";
 				$url = Message_Manager::get_download_url($message['media']['audio-url'], $message);
 				echo "<a href=\"$url\" title=\"$title\">$title</a>";
@@ -1342,7 +1359,8 @@ class Message_Manager {
 			}
 			
 			if ($message['media']['video-attachment'] == 'yes' && $message['media']['video-type'] == 'url' && !empty($message['media']['video-url'])) {
-				echo '<li>';
+				$mime_class = Message_Manager::get_the_mime_class($message['media']['video-url']);
+				echo "<li$mime_class>";
 				$title = "HQ Video";
 				$url = Message_Manager::get_download_url($message['media']['video-url'], $message);
 				echo "<a href=\"$url\" title=\"$title\">$title</a>";
