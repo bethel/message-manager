@@ -131,7 +131,7 @@ function mm_feed_sanitize($text) {
 			<link><?php the_permalink() ?></link>
 			<description><?php echo $summary; ?></description>
 			<itunes:author><?php echo $speakers; ?></itunes:author>
-			<itunes:subtitle><?php echo $series; ?></itunes:subtitle>
+			<itunes:subtitle><?php echo $summary; ?></itunes:subtitle>
 			<itunes:summary><?php echo $summary; ?></itunes:summary>
 			<?php if (!empty($date)): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
 			
