@@ -23,7 +23,7 @@ function mm_feed_sanitize($text) {
         $replacement[] = "";
         $text = preg_replace($pattern, $replacement, $text);
         
-        return Encoding::fixUTF8($text);
+        return Encoding::removeBOM($text);
 }
 
 ?>
