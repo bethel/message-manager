@@ -52,6 +52,7 @@
 
 /* speakers */
 .message_manager_speaker article {
+	clear: both;
 	margin-bottom: 2em;
 }
 .message_manager_speaker header h4 {
