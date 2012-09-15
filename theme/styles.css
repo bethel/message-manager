@@ -50,6 +50,19 @@
 	margin-top: 0px;
 }
 
+/* speakers */
+.message_manager_speaker article {
+	margin-bottom: 2em;
+}
+.message_manager_speaker header h4 {
+	margin-bottom: 0px;
+}
+.message_manager_speaker header span {
+	display: block;
+	margin-bottom: 14px;
+	color: gray;
+}
+
 /* the series list */
 .message_manager_message h3 {
 	margin: 0;

@@ -92,7 +92,6 @@ class Message_Manager {
 		remove_all_actions('do_feed_podcast');
 		add_action('do_feed_podcast', array($this, 'do_feed_podcast'), 10, 1);
 		add_action('pre_get_posts', array($this, 'sort_messages_by_sermon_date'));
-		add_filter('pre_option_posts_per_rss', array($this, 'show_all_messages_in_podcast'));
 
 		// set up downloads
 		add_action('parse_request', array($this, 'download_action'));
@@ -375,13 +374,16 @@ class Message_Manager {
 		// only modify if permalinks are enabled
 		if (get_option('permalink_structure') == '') return $link;
 		
-		// only modify for message post type
-		if ($term->taxonomy != Message_Manager::$tax_series) return $link;
-		
 		$message_base = Message_Manager_Options::get('message-base', 'messages');
 		$base = home_url('/'.$message_base);
 		
-		return $base . '/' . $term->slug;
+		switch ($term->taxonomy) {
+			case Message_Manager::$tax_series:
+				return $base . '/' . $term->slug;
+			case Message_Manager::$tax_speaker:
+				return $base . '/speaker/' . $term->slug;
+		}
+		return $link;
 	}
 	
 	function rewrite_rules_array($rules) {
@@ -400,6 +402,10 @@ class Message_Manager {
 		
 		// downloads
 		$mm_rules[$message_base.'/download/?$'] =  'index.php?'.Message_Manager::$var_download;
+		
+		// speakers
+		$mm_rules[$message_base.'/speaker/([^/]+)/?$'] =  'index.php?'.Message_Manager::$tax_speaker.'=$matches[1]';
+		$mm_rules[$message_base.'/speaker/([^/]+)/page/?([0-9]{1,})/?$'] = 'index.php?'.Message_Manager::$tax_speaker.'=$matches[1]&paged=$matches[2]';
 		
 		// series
 		$mm_rules[$message_base.'/([^/]+)/?$'] =  'index.php?'.Message_Manager::$tax_series.'=$matches[1]';
@@ -502,16 +508,8 @@ class Message_Manager {
 		}
 	}
 	
-	function show_all_messages_in_podcast($limit) {
-		if (is_feed('podcast')) {
-			return 99999; // -1 breaks things
-		}
-		
-		return $limit;
-	}
-	
 	function remove_query_limit($limit) {
-		if (is_post_type_archive(Message_Manager::$cpt_message) || is_taxonomy(Message_Manager::$tax_series)) {
+		if (is_feed('podcast') || is_post_type_archive(Message_Manager::$cpt_message) || is_tax(Message_Manager::$tax_series)) {
 			return 'LIMIT 0, 99999';
 		}
 		return $limit;
@@ -535,14 +533,23 @@ class Message_Manager {
 		add_image_size(Message_Manager::$cpt_message, '220', '124', true);
 	}
 	
-	function template_filter($template) {	
+	function template_filter($template) {
+		$temp = null;
+		
 		if (is_singular(Message_Manager::$cpt_message)) {
-			return Message_Manager::find_theme_path('message.php');
+			$temp = Message_Manager::find_theme_path('message.php');
 		} else if (is_tax(Message_Manager::$tax_series)) {
-			return Message_Manager::find_theme_path('series.php');
+			$temp = Message_Manager::find_theme_path('series.php');
+		} else if (is_tax(Message_Manager::$tax_speaker)) {
+			$temp = Message_Manager::find_theme_path('speaker.php');
 		} else if (is_post_type_archive(Message_Manager::$cpt_message)) {
-			return Message_Manager::find_theme_path('messages.php');	
-		}		
+			$temp = Message_Manager::find_theme_path('messages.php');	
+		}
+		
+		if (file_exists($temp)) {
+			return $temp;
+		}
+		
 		return $template;
 	}
 	
@@ -922,8 +929,16 @@ class Message_Manager {
 		return $id;
 	}
 	
+	public static $SERIES_OPT_DEFAULT = 0;
+	public static $SERIES_OPT_ONLY = 1;
+	public static $SERIES_OPT_NONE = 2;
+		
 	/** TEMPLATE API */
-	public static function get_items_from_posts($series_only = false, $posts = array()) {
+	public static function get_items_from_posts($series_opt = null, $posts = array()) {
+		if ($series_opt == null) {
+			$series_opt = Message_Manager::$SERIES_OPT_DEFAULT;
+		}
+		
 		if (empty($posts)) {
 			if (have_posts()) {
 				while (have_posts()) {
@@ -942,7 +957,7 @@ class Message_Manager {
 			$details_mb->the_meta($post->ID);
 			
 			$terms = get_the_terms($post->ID, Message_Manager::$tax_series);
-			if (!empty($terms)) {
+			if (!empty($terms) && $series_opt != Message_Manager::$SERIES_OPT_NONE) {
 				foreach ($terms as $term) {
 					if (empty($items[$term->slug])) {
 						$new = get_object_vars($term);
@@ -966,7 +981,7 @@ class Message_Manager {
 						$items[$term->slug]['end_date'] = $message_date;
 					}
 					
-					if (!$series_only) {
+					if ($series_opt != Message_Manager::$SERIES_OPT_ONLY) {
 						$items[$term->slug]['messages'][] = Message_Manager::process_message_item($post, $series_only, $details_mb, $current, $terms);
 					}
 				}
@@ -1010,12 +1025,30 @@ class Message_Manager {
 		}
 	}
 	
+	public static function get_the_id($item) {
+		if (!empty($item['ID'])) {
+			return $item['ID'];
+		}
+		return null;
+	}
+	
+	public static function the_id($item) {
+		echo Message_Manager::get_the_id($item);
+	}
+	
 	public static function the_title($item) {
 		echo Message_Manager::get_the_title($item);
 	}
 	
-	public static function the_link($item) {
-		echo $item['link'];
+	public static function get_the_link($item = null) {
+		if (!empty($item)) {
+			return $item['link'];
+		}
+		return home_url(Message_Manager_Options::get(slug));
+	}
+	
+	public static function the_link($item = null) {
+		echo Message_Manager::get_the_link($item);
 	}
 	
 	public static function the_image($item, $params = array()) {
@@ -1108,6 +1141,22 @@ class Message_Manager {
 	
 	public static function the_content($item) {
 		echo Message_Manager::get_the_content($item);
+	}
+	
+	public static function get_the_excerpt($item, $num_words = 55, $more = null) {
+		$content = Message_Manager::get_the_content($item);
+		
+		if ($more == null) {
+			$more = '&hellip; <a href="'.Message_Manager::get_the_link($item).'" title="'.Message_Manager::get_the_title($item).'">more</a>';
+		}
+		
+		$excerpt = wpautop(wptexturize(wp_trim_words($content, $num_words, $more)));
+		
+		return $excerpt;
+	}
+
+	public static function the_excerpt($item, $num_words = 55, $more = null) {
+		echo Message_Manager::get_the_excerpt($item, $num_words, $more);
 	}
 	
 	public static function get_messages_in_series($series_item, $limit = 99999) {
@@ -1306,7 +1355,7 @@ class Message_Manager {
 			<?php }
 		}
 		if ($show_all_link) { ?>
-			<h4><a class="message-manager-all" href="<?php Message_Manager::the_permalink(); ?>" title="Messages">All messages</a></h4>
+			<h4><a class="message-manager-all" href="<?php Message_Manager::the_link(); ?>" title="Messages">All messages</a></h4>
 		<?php }
 	}
 	
@@ -1372,7 +1421,7 @@ class Message_Manager {
 	}
 	
 	public static function the_speakers($message) {
-		echo strip_tags(get_the_term_list($message['ID'], Message_Manager::$tax_speaker, '', ' &amp; ', ''));
+		echo get_the_term_list($message['ID'], Message_Manager::$tax_speaker, '', ' &amp; ', '');
 	}
 	
 	public static function the_topics($message) {
@@ -1414,10 +1463,6 @@ class Message_Manager {
 		echo home_url(Message_Manager_Options::get(slug).'/podcast');	
 	}
 	
-	public static function the_permalink() {
-		echo home_url(Message_Manager_Options::get(slug));
-	}
-	
 	public static function get_download_url($url, $message = null) {
 		if (is_array($message)) {
 			if (!empty($message['ID'])) {
@@ -1427,6 +1472,24 @@ class Message_Manager {
 		
 		return home_url(Message_Manager_Options::get(slug).'/download/?'.Message_Manager::$var_download_url.'='.urlencode($url).'&'.Message_Manager::$var_download_message_id.'='.urlencode($message));
 	}
+	
+	public static function the_speaker_list($args = array()) {
+		if (empty($args)) {
+			$args = array('order'=>'DESC', 'orderby'=>'count','hide_empty' => true);
+		}
+		$terms = get_terms(Message_Manager::$tax_speaker, $args);
+		
+		if (empty($terms)) return;
+		
+		echo '<ul class="message-manager-speaker-list">';
+		foreach ($terms as $term) {
+			echo '<li>';
+			echo '<a href="'.get_term_link($term).'" title="' . sprintf(__('View all messages by %s', 'my_localization_domain'), $term->name) . '">' . $term->name . '</a>';
+			echo '</li>';
+		}
+		echo '</ul>';
+	}
+		
 }
 
 // initialize the plugin

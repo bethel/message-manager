@@ -3,7 +3,7 @@
  * The Message Manager template the the main message page
  */
 
-$items = Message_Manager::get_items_from_posts(true);
+$items = Message_Manager::get_items_from_posts(Message_Manager::$SERIES_OPT_ONLY);
 ?>
 <?php get_header(); ?>
 
