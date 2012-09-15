@@ -1358,7 +1358,7 @@ class Message_Manager {
 			<?php }
 		}
 		if ($show_all_link) { ?>
-			<h4><a class="message-manager-all" href="<?php Message_Manager::the_link(); ?>" title="Messages">All messages</a></h4>
+			<h5 class="message-manager-all">&larr;<a href="<?php Message_Manager::the_link(); ?>" title="Return To Messages">Return to Messages</a></h5>	
 		<?php }
 	}
 	
@@ -1492,7 +1492,44 @@ class Message_Manager {
 		}
 		echo '</ul>';
 	}
+	
+	public static function get_file_size($url) {
 		
+		$transient_id = 'filesize_'.sha1($url);
+		
+		$filesize = get_transient($transient_id);
+		if ($filesize) return $filesize;
+		
+		$filesize = 0;
+		
+		$id = Message_Manager::get_attachment_id_from_src($url);
+		if (!empty($id)) {
+			$url = get_attached_file($id);
+		}
+		
+		if (file_exists($url)) {
+			$filesize = filesize($url);
+		}
+			
+		// try curl
+		if ($filesize == 0) {
+			$uh = curl_init();
+			curl_setopt($uh, CURLOPT_URL, $url);
+			curl_setopt($uh, CURLOPT_NOBODY, 1);
+			curl_setopt($uh, CURLOPT_HEADER, 0);
+			curl_exec($uh);
+			$filesize = curl_getinfo($uh,CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+			curl_close($uh);
+		}
+		
+		if (!is_numeric($filesize)) {
+			$filesize = 0;
+		} else {
+			set_transient($transient_id, $filesize, 60*60*24*7);	
+		}
+		
+		return $filesize;
+	}
 }
 
 // initialize the plugin

@@ -63,14 +63,12 @@ $items = Message_Manager::get_items_from_posts(Message_Manager::$SERIES_OPT_NONE
 	<div class="sidebar four columns" role="complementary">
 
 		<div class="panel">
-			<h4>All Speakers:</h4>
-			
-			<?php Message_Manager::the_speaker_list(); ?>
-			
-			<hr>
-						
+				
 			<h5>&larr;<a href="<?php Message_Manager::the_link(); ?>" title="Return To Messages">Return to Messages</a></h5>
 			
+			<hr>
+			<h4>All Speakers:</h4>
+			<?php Message_Manager::the_speaker_list(); ?>
 		</div>
 
 	</div>

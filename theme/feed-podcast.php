@@ -105,6 +105,25 @@ function mm_feed_sanitize($text) {
 	if (!empty($audio_info['filesize'])) {
 		$audio_size = $audio_info['filesize'];
 	}
+	
+	$attachments = get_post_meta(get_the_ID(), Message_Manager::$message_attachments_mb->get_the_id(), TRUE);
+	$attachments = $attachments['attachment'];
+	
+	$pdf_attachments = array();
+	
+	if (!empty($attachments)) {
+		foreach ($attachments as $attachment) {		
+			if (empty($attachment['url'])) continue;
+			$pathinfo = pathinfo($attachment['url']);
+			
+			if (!empty($pathinfo['extension'])) {
+				if (strtolower($pathinfo['extension']) == 'pdf') {
+					$attachment['size'] = Message_Manager::get_file_size($attachment['url']);
+					$pdf_attachments[] = $attachment;
+				}
+			}
+		}
+	}
 ?>
 <?php if (!empty($audio_url) && !empty($audio_duration) && !empty($audio_size)): ?>
 		<item>
@@ -123,7 +142,21 @@ function mm_feed_sanitize($text) {
 			
 			<?php if (!empty($topic)) : ?><?php echo $topic . "\n" ?><?php endif; ?>
 		</item>
-<?php endif; endwhile; endif;  ?>
+<?php endif; ?>
+<?php if (!empty($pdf_attachments)): foreach($pdf_attachments as $attachment): extract($attachment); ?>
+		<item>
+			<title><?php echo get_the_title_rss() . ' - '; ?><?php echo empty($title)? mm_feed_sanitize(basename($url)): mm_feed_sanitize($title); ?></title>
+			<description><?php echo mm_feed_sanitize($description); ?></description>
+			<itunes:subtitle><?php echo mm_feed_sanitize($description); ?></itunes:subtitle>
+			<itunes:summary><?php echo mm_feed_sanitize($description); ?></itunes:summary>
+			<?php if (!empty($date)): ?><pubDate><?php echo $date; ?></pubDate><?php endif; ?>
+			
+			<enclosure url="<?php echo esc_url($url); ?>" length="<?php echo $size; ?>" type="application/pdf" />
+			<guid><?php echo esc_url($url); ?></guid>
+			
+			<?php if (!empty($topic)) : ?><?php echo $topic . "\n" ?><?php endif; ?>
+		</item>	
+<?php endforeach; endif; endwhile; endif;  ?>
 	</channel>
 </rss>
 <?php die(); ?>
