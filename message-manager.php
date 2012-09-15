@@ -509,9 +509,12 @@ class Message_Manager {
 	}
 	
 	function remove_query_limit($limit) {
+		if (is_admin()) return $limit;
+		
 		if (is_feed('podcast') || is_post_type_archive(Message_Manager::$cpt_message) || is_tax(Message_Manager::$tax_series)) {
 			return 'LIMIT 0, 99999';
 		}
+		
 		return $limit;
 	}
 	
