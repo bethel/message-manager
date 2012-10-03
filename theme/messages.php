@@ -35,8 +35,10 @@ $items = Message_Manager::get_items_from_posts(Message_Manager::$SERIES_OPT_ONLY
 
 				<div class="panel">
 					<h5>Bethel Live</h5>
-					<p>TODO: Graphic</p>			
-					<p>Each Sunday, services are broadcast live at both 9:00 a.m. and 10:45 a.m.</p>
+					<a href="http://bethelfc.sermon.tv/" title="Watch Bethel Live">
+					<img src="<?php echo Message_Manager::find_theme_url('watch_bethel_live_small.jpg')?>" title="Watch Bethel Live" />
+					</a>
+					<p style="margin-top:14px;">Each Sunday, services are broadcast live at both 9:00 a.m. and 10:45 a.m.</p>
 				</div>
 
 			</div>
