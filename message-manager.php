@@ -532,8 +532,8 @@ class Message_Manager {
 	}
 	
 	function add_images() {
-		add_image_size(Message_Manager::$tax_series, '220', '220', true);
 		add_image_size(Message_Manager::$cpt_message, '220', '124', true);
+		add_image_size(Message_Manager::$tax_series, '220', '124', true);
 	}
 	
 	function template_filter($template) {
@@ -1070,12 +1070,7 @@ class Message_Manager {
 			if (!empty($attachment_id)) {
 				echo get_image_tag($attachment_id, $alt, $title, $align, $size);
 			} else {
-				$image = null;
-				if ($size == Message_Manager::$tax_series) {
-					$image = Message_Manager_Options::get('default-message-image-square');
-				} else {
-					$image = Message_Manager_Options::get('default-message-image');
-				}
+				$image = Message_Manager_Options::get('default-message-image');
 				if (!empty($image)) {
 					echo get_image_tag($image['id'], $alt, $title, $align, $size);
 				}
