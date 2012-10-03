@@ -343,12 +343,12 @@ class Message_Manager {
 	}
 
 	function enqueue_front_styles() {
-		wp_enqueue_style('mm-mediaelement-css', Message_Manager::find_theme_url('mediaelement/mediaelementplayer.min.css'), Message_Manager::$version);
-		wp_enqueue_style('mm-mediaelement-skins', Message_Manager::find_theme_url('mediaelement/mejs-skins.css'));
-		wp_enqueue_style('message-manager-theme', Message_Manager::find_theme_url('styles.css'), Message_Manager::$version);
+		wp_enqueue_style('mm-mediaelement-css', Message_Manager::find_theme_url('mediaelement/mediaelementplayer.min.css'), array(), '2.9.5');
+		wp_enqueue_style('mm-mediaelement-skins', Message_Manager::find_theme_url('mediaelement/mejs-skins.css'), array(), '2.9.5');
+		wp_enqueue_style('message-manager-theme', Message_Manager::find_theme_url('styles.css'), array(), Message_Manager::$version);
 			
-		wp_enqueue_script('mm-mediaelement-js', Message_Manager::$url.'includes/mediaelement/mediaelement-and-player.min.js', array('jquery'), '2.9.3');
-		wp_enqueue_script('mm-mediaelement-ga-js', Message_Manager::$url.'includes/mediaelement/mep-feature-googleanalytics.js', array('mm-mediaelement-js'), '2.9.3');
+		wp_enqueue_script('mm-mediaelement-js', Message_Manager::$url.'includes/mediaelement/mediaelement-and-player.min.js', array('jquery'), '2.9.5');
+		wp_enqueue_script('mm-mediaelement-ga-js', Message_Manager::$url.'includes/mediaelement/mep-feature-googleanalytics.js', array('mm-mediaelement-js'), '2.9.5');
 	}
 
 	function post_type_link($link, $post) {
@@ -1220,8 +1220,8 @@ class Message_Manager {
 	public static function the_audio($message) {
 		if (Message_Manager::has_audio($message)) {
 			$audio_url = $message['media']['audio-url'];	
-			$id = 'player_'.$message['ID'];
-			echo "<audio id=\"#$id\" src=\"$audio_url\" type=\"audio/mp3\" controls=\"controls\"></audio>";
+			$id = 'audio_'.$message['ID'];
+			echo "<audio id=\"$id\" src=\"$audio_url\" type=\"audio/mp3\" controls=\"controls\"></audio>";
 			echo "<script type=\"text/javascript\">
 			//<![CDATA[
 			jQuery(document).ready(function($) {
