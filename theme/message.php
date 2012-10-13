@@ -57,7 +57,7 @@ if (!empty($item['messages'])) {
 				<div class="addthis_toolbox addthis_counter_style">
 				<a class="addthis_button_facebook_like" fb:like:layout="box_count" style="float:left; z-index:100000;"></a>
 				<a class="addthis_button_google_plusone" g:plusone:size="tall" style="float:left; margin-left: 5px;"></a>
-				<a class="addthis_counter" style="float:left; margin-left: 10px";></a>
+				<a class="addthis_counter" style="float:left; margin-left: 10px;"></a>
 				</div>
 				<script type="text/javascript">
 				var addthis_config = { ui_click:true };
