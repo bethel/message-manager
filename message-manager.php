@@ -1191,6 +1191,9 @@ class Message_Manager {
 		if (Message_Manager::has_video($message)) {			
 			$media = $message['media'];
 			
+			$height = htmlentities(preg_replace('/[^0-9]/','', Message_Manager_Options::get('video-height')));
+			$width = htmlentities(preg_replace('/[^0-9]/','', Message_Manager_Options::get('video-width')));
+			
 			switch($media['video-type']) {
 				case 'url':
 					//todo:
@@ -1198,8 +1201,9 @@ class Message_Manager {
 				case 'vimeo':
 					$video_id = Message_Manager::get_vimeo_video_id($media['video-url']);
 					if (!empty($video_id)) {
+						$options = htmlentities(Message_Manager_Options::get('vimeo-url-options'));
 						echo '<div class="flex-video widescreen vimeo">';
-						echo "<iframe src=\"http://player.vimeo.com/video/$video_id?portrait=0&color=333\" width=\"640\" height=\"385\" frameborder=\"0\" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>";
+						echo "<iframe src=\"http://player.vimeo.com/video/{$video_id}{$options}\" width=\"$width\" height=\"$height\" frameborder=\"0\" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>";
 						echo '</div>';
 					}
 					return null;
@@ -1207,7 +1211,7 @@ class Message_Manager {
 					$video_id= Message_Manager::get_youtube_video_id($media['video-url']);
 					if (!empty($video_id)) {
 						echo '<div class="flex-video widescreen">';
-						echo "<iframe class=\"youtube-player\" type=\"text/html\" width=\"640\" height=\"385\" src=\"http://www.youtube.com/embed/$video_id\" frameborder=\"0\"></iframe>";
+						echo "<iframe class=\"youtube-player\" type=\"text/html\" width=\"$width\" height=\"$width\" src=\"http://www.youtube.com/embed/$video_id\" frameborder=\"0\"></iframe>";
 						echo '</div>';
 					}
 					return null;
@@ -1449,8 +1453,8 @@ class Message_Manager {
 			'orderby' => 'meta_value',
 			'order' => 'DESC',
 		));
-		
-		$items = Message_Manager::get_items_from_posts(false, $messages);
+
+		$items = Message_Manager::get_items_from_posts(Message_Manager::$SERIES_OPT_NONE, $messages);
 		if (count($items) > 0) {
 			return array_shift($items);	
 		}

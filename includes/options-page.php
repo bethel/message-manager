@@ -24,6 +24,7 @@ class Message_Manager_Options {
 		$options_panel->TabsListing(array(
 			'links' => array(
 				'general' =>  __('General'),
+				'video' => __('Video'),
 				'podcasting' =>  __('Podcasting'),
 			)
 		));
@@ -35,6 +36,14 @@ class Message_Manager_Options {
 		$options_panel->addImage('default-message-image', array('name'=> 'Default Message Image (16:9)','preview_height' => '124px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a message does not have a featured image. For best results, the image should be 16:9.'));
 		//$options_panel->addImage('default-message-image-square', array('name'=> 'Default Message Image (Square)','preview_height' => '220px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed in the message archive if a message does not have a featured image. For best results, the image should be square(1:1).'));
 		$options_panel->addImage('default-series-image', array('name'=> 'Default Series Image (Square)','preview_height' => '124px', 'preview_width' => '220px', 'desc'=>'The default image to be displayed if a series does not have an image. For best results, the image should be square(16:9).'));
+		$options_panel->CloseTab();
+		
+		// the embedded video tab
+		$options_panel->OpenTab('video');
+		$options_panel->Title("Video");
+		$options_panel->addText('video-width', array('name'=> 'Video Width', 'std'=> Message_Manager_Options::get('video-width'), 'desc'=>'The sermon video\'s width in pixels.'));
+		$options_panel->addText('video-height', array('name'=> 'Video Height', 'std'=> Message_Manager_Options::get('video-height'), 'desc'=>'The sermon video\'s height in pixels.'));
+		$options_panel->addText('vimeo-url-options', array('vimeo-url-options'=> 'Vimeo URL Options', 'std'=> Message_Manager_Options::get('vimeo-url-options'), 'desc'=>'URL options to append to the Vimeo embedded video url. e.g. ?portrait=0&color=333'));
 		$options_panel->CloseTab();
 		
 		// the podcasting tab
@@ -68,6 +77,9 @@ class Message_Manager_Options {
 			
 			$defaults = array(
 				'slug' => 'messages',
+				'video-width' => '640',
+				'video-height' => '385',
+				'vimeo-url-options' => '?title=1&amp;byline=1&amp;portrait=0',
 				'podcast-title' => get_bloginfo_rss('name'),
 				'podcast-subtitle' => get_bloginfo_rss('description'),
 				'podcast-link' => home_url('/'),
