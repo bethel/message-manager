@@ -474,28 +474,34 @@ class Message_Manager {
 				$attachment_id = Message_Manager::get_attachment_id_from_src($url);
 				$path = get_attached_file($attachment_id, false);
 				
-				if (!empty($path) && file_exists($path)) {
+				if (!empty($attachment_id)) {
 					update_post_meta($attachment_id, 'downloads', get_post_meta($attachment_id, 'downloads', true) + 1);
-					
-					if(headers_sent()) die('Headers Sent');
-					if(ini_get('zlib.output_compression')) ini_set('zlib.output_compression', 'Off');
-					
-					header('Content-Description: File Transfer');
-				    header('Content-Type: application/octet-stream');
-				    header('Content-Disposition: attachment; filename='.basename($path));
-				    header('Content-Transfer-Encoding: binary');
-				    header('Expires: 0');
-				    header('Cache-Control: must-revalidate');
-				    header('Pragma: public');
-				    header('Content-Length: ' . filesize($path));
-				    ob_clean();
-				    flush();
-				    readfile($path);
-				    exit;
-				} else {
-					wp_redirect($url, 302);
-					die();
 				}
+				wp_redirect($url, 302);
+				die();
+				
+// 				if (!empty($path) && file_exists($path)) {
+// 					update_post_meta($attachment_id, 'downloads', get_post_meta($attachment_id, 'downloads', true) + 1);
+					
+// 					if(headers_sent()) die('Headers Sent');
+// 					if(ini_get('zlib.output_compression')) ini_set('zlib.output_compression', 'Off');
+					
+// 					header('Content-Description: File Transfer');
+// 				    header('Content-Type: application/octet-stream');
+// 				    header('Content-Disposition: attachment; filename='.basename($path));
+// 				    header('Content-Transfer-Encoding: binary');
+// 				    header('Expires: 0');
+// 				    header('Cache-Control: must-revalidate');
+// 				    header('Pragma: public');
+// 				    header('Content-Length: ' . filesize($path));
+// 				    ob_clean();
+// 				    flush();
+// 				    readfile($path);
+// 				    exit;
+// 				} else {
+// 					wp_redirect($url, 302);
+// 					die();
+// 				}
 			}
 		}
 
