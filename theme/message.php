@@ -19,7 +19,7 @@ if (!empty($item['messages'])) {
 
 <div id="content" class="clearfix message_manager_message">
 
-	<div id="main" class="twelve columns clearfix" role="main">
+	<div id="main" class="large-12 columns clearfix" role="main">
 
 		<?php if (!empty($message)): ?>
 
