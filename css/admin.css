@@ -1,26 +1,28 @@
 .mm_admin_attachments .form-table, .mm_admin_media .form-table {
-	-webkit-border-radius: 3px;
-	-moz-border-radius: 3px;
-	border-radius: 3px;
-	box-sizing: border-box;
-	border-width: 1px;
-	border-color: #999;
-	border-style: solid;
-	border-collapse: separate;
+    border: 1px solid #999;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    box-sizing: border-box;
+    border-collapse: separate;
 }
 
 #mm-message-date {
-	width: 100px;
+    width: 100px;
 }
 
 #mm-message-verses {
-	width: 99%;
+    width: 99%;
 }
 
 #mm-media-embedded {
-	display: none;
+    display: none;
 }
 
-input.mediafield-video-url-n, input.mediafield-audio-url-n, .mm-attachment-url input {
-	width: 50%;
+.mm_admin_box input[type=text] {
+    width: 70%;
+}
+
+.mm_admin_box .form-table th {
+    width: 100px;
 }
