@@ -35,5 +35,3 @@ $args = array(
 );
 
 register_taxonomy(MM_TAX_SERIES, MM_CPT_MESSAGE, $args);
-
-add_image_size(MM_TAX_SERIES, '220', '124', true);

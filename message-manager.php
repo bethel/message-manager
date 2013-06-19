@@ -5,7 +5,7 @@ Description: Manage audio and video sermon content as well as speakers, series, 
 Version: 2.0.0
 Author: Chris Roemmich
 Author URI: https:cr-wd.com
-License: GPLv3
+License: MIT
 */
 
 /** Constants */
@@ -73,9 +73,9 @@ class Message_Manager
         add_action('init', array($this, 'register_post_types'));
 
         // override default templates
-        //add_filter('single_template', array($this, 'template_filter'));
-        //add_filter('archive_template', array($this, 'template_filter'));
-        //add_filter('category_template', array($this, 'template_filter'));
+        add_filter('single_template', array($this, 'template_filter'));
+        add_filter('archive_template', array($this, 'template_filter'));
+        add_filter('taxonomy_template', array($this, 'template_filter'));
 
         // enqueue css and javascript
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
@@ -89,10 +89,7 @@ class Message_Manager
         add_filter('term_link', array($this, 'filter_term_link'), 10, 2);
 
         // sort messages by the message details date metadata
-        add_action('pre_get_posts', array($this, 'sort_messages_by_details_date'));
-
-        // loads the template tags
-        $this->load_template_tags();
+        add_action('pre_get_posts', array($this, 'pre_get_posts'));
 
         // setup the options page
         $this->setup_admin_page();
@@ -113,6 +110,8 @@ class Message_Manager
 //
 //		// register the widget
 //		add_action('widgets_init', array($this, 'register_widget'));
+
+        add_action('wp_ajax_nopriv_mm_ajax_load_more', array($this, 'ajax_load_more'));
     }
 
     /**
@@ -181,18 +180,25 @@ class Message_Manager
     public function template_filter($template)
     {
         if (is_singular(MM_CPT_MESSAGE)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('message.php');
         } else if (is_post_type_archive(MM_CPT_MESSAGE)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('messages.php');
         } else if (is_tax(MM_TAX_SERIES)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('series.php');
-        } else if (is_tax(MM_TAX_SPEAKERS)) {
+        } else if (is_tax(MM_TAX_SPEAKER)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('speaker.php');
         } else if (is_tax(MM_TAX_TOPICS)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('topic.php');
         } else if (is_tax(MM_TAX_VENUES)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('venue.php');
         } else if (is_tax(MM_TAX_BOOKS)) {
+            $this->load_template_tags();
             $file = $this->locate_view_path('book.php');
         }
         return !empty($file) ? $file : $template;
@@ -206,7 +212,6 @@ class Message_Manager
      */
     public function get_option($option, $default = false)
     {
-
         return (MM_META_PREFIX . $option);
         return get_option(MM_META_PREFIX . $option, $default);
     }
@@ -246,13 +251,13 @@ class Message_Manager
      */
     public function enqueue_frontend_scripts()
     {
-        if (is_singular(MM_CPT_MESSAGE) || is_post_type_archive(MM_CPT_MESSAGE)) {
-            wp_enqueue_style('mm-mediaelement-css', MM_VENDOR_URL . 'mediaelement/mediaelementplayer.min.css', array(), '2.11.3');
-            wp_enqueue_style('mm-mediaelement-skins', MM_VENDOR_URL . 'mediaelement/mejs-skins.css', array('mm-mediaelement-css'), '2.11.3');
+        if (is_singular(MM_CPT_MESSAGE) || $this->is_message_manager_archive()) {
+            wp_enqueue_style('mm-mediaelement-css', MM_VENDOR_URL . 'mediaelement/mediaelementplayer.min.css', array(), '2.12.0');
+            wp_enqueue_style('mm-mediaelement-skins', MM_VENDOR_URL . 'mediaelement/mejs-skins.css', array('mm-mediaelement-css'), '2.12.0');
             wp_enqueue_style('mm-styles', $this->locate_view_url('styles.css'), array('mm-mediaelement-skins'), MM_VERSION);
 
-            wp_enqueue_script('mm-mediaelement-js', MM_VENDOR_URL . 'mediaelement/mediaelement-and-player.min.js', array('jquery'), '2.11.3');
-            wp_enqueue_script('mm-mediaelement-ga-js', MM_VENDOR_URL . 'mediaelement/mep-feature-googleanalytics.js', array('mm-mediaelement-js'), '2.11.3');
+            wp_enqueue_script('mm-mediaelement-js', MM_VENDOR_URL . 'mediaelement/mediaelement-and-player.min.js', array('jquery'), '2.12.0');
+            wp_enqueue_script('mm-mediaelement-ga-js', MM_VENDOR_URL . 'mediaelement/mep-feature-googleanalytics.js', array('mm-mediaelement-js'), '2.12.0');
         }
     }
 
@@ -360,11 +365,20 @@ class Message_Manager
         $base = $this->get_base_slug();
 
         $mm_rules = array(
+            // message archive paging
+            $base . '/page/?([0-9]{1,})/?$' => 'index.php?post_type=mm_cpt_message&paged=$matches[1]',
+
             // podcast rules
             $base . '/podcast/?$' => 'index.php?post_type=' . MM_CPT_MESSAGE . '&feed=podcast',
             $base . '/feed/podcast/?$' => 'index.php?post_type=' . MM_CPT_MESSAGE . '&feed=podcast',
             $base . '/podcast.rss/?$' => 'index.php?post_type=' . MM_CPT_MESSAGE . '&feed=podcast',
             $base . '/feed/podcast.rss/?$' => 'index.php?post_type=' . MM_CPT_MESSAGE . '&feed=podcast',
+
+            // speakers
+            $base . '/speaker/([^/]+)/feed/(feed|rdf|rss|rss2|atom|podcast)/?$' => 'index.php?mm_tax_speaker=$matches[1]&feed=$matches[2]',
+            $base . '/speaker/([^/]+)/(feed|rdf|rss|rss2|atom|podcast)/?$' => 'index.php?mm_tax_speaker=$matches[1]&feed=$matches[2]',
+            $base . '/speaker/([^/]+)/page/?([0-9]{1,})/?$' => 'index.php?mm_tax_speaker=$matches[1]&paged=$matches[2]',
+            $base . '/speaker/([^/]+)/?$' => 'index.php?mm_tax_speaker=$matches[1]',
 
             // {base}/{series}
             $base . '/([^/]+)/feed/podcast/?$' => 'index.php?' . MM_TAX_SERIES . '=$matches[1]&feed=$matches[2]',
@@ -378,7 +392,7 @@ class Message_Manager
             $base . '/[^/]+/([^/]+)/(feed|rdf|rss|rss2|atom|podcast)/?$' => 'index.php?' . MM_CPT_MESSAGE . '=$matches[1]&feed=$matches[2]',
             $base . '/[^/]+/([^/]+)/page/?([0-9]{1,})/?$' => 'index.php?' . MM_CPT_MESSAGE . '=$matches[1]&paged=$matches[2]',
             $base . '/[^/]+/([^/]+)/comment-page-([0-9]{1,})/?$' => 'index.php?' . MM_CPT_MESSAGE . '=$matches[1]&cpage=$matches[2]',
-            $base . '/[^/]+/([^/]+)(/[0-9]+)?/?$' => 'index.php?' . MM_CPT_MESSAGE . '=$matches[1]&page=$matches[2]',
+            $base . '/[^/]+/([^/]+)(/[0-9]+)?/?$' => 'index.php?' . MM_CPT_MESSAGE . '=$matches[1]&paged=$matches[2]',
         );
 
         return $mm_rules + $rules;
@@ -400,20 +414,41 @@ class Message_Manager
         require_once(MM_INC_PATH . 'downloads.php');
     }
 
+    public function select_messages()
+    {
+        global $wp_query;
+
+        var_dump($wp_query);
+    }
+
+    public function is_message_manager_archive()
+    {
+        return is_post_type_archive(MM_CPT_MESSAGE) || is_tax(MM_TAX_SERIES) || is_tax(MM_TAX_BOOKS) || is_tax(MM_TAX_TOPICS) || is_tax(MM_TAX_SPEAKER) || is_tax(MM_TAX_VENUES);
+    }
+
     /**
-     * Modifies the query to sort messages by the details date meta key
+     * Modifies the main message archive query to include only a single post per series and sort
+     * by the details date meta key
      * @param $query WP_Query the query
      * @return mixed
      */
-    function sort_messages_by_details_date($query)
+    function pre_get_posts($query)
     {
-        if ($query->is_main_query() && !is_admin() && is_post_type_archive(MM_CPT_MESSAGE)) {
-            $meta_key = MM_META_PREFIX . 'details_date';
-            $query->set('meta_key', $meta_key);
+        if ($query->is_main_query() && !is_admin() && $this->is_message_manager_archive()) {
+
+            $query->set('meta_key', $this->message_details_mb->get_the_name('date'));
             $query->set('meta_value', date('yy-mm-dd'));
             $query->set('meta_compare', '>=');
             $query->set('orderby', 'meta_value');
             $query->set('order', 'DESC');
+
+            if (!is_feed() && is_post_type_archive(MM_CPT_MESSAGE)) {
+                $query->set('post__in', $this->get_filtered_message_ids());
+            }
+
+            if (!is_feed() && !is_tax(MM_TAX_SPEAKER)) {
+                $query->set('posts_per_page', -1);
+            }
         }
         return $query;
     }
@@ -475,10 +510,25 @@ class Message_Manager
     }
 
     /**
+     * Loads template tags from the stylesheet path, template path, and plugin.
+     */
+    public function load_podcast_tags()
+    {
+        $tag_files = array(trailingslashit(get_stylesheet_directory()) . 'message-manager/podcast-tags.php', trailingslashit(get_template_directory()) . 'message-manager/podcast-tags.php', MM_VIEWS_PATH . 'podcast-tags.php');
+        foreach ($tag_files as $file) {
+            if (file_exists($file)) {
+                require_once($file);
+            }
+        }
+    }
+
+    /**
      * Responds to the podcast feed type (action: do_feed_podcast)
      */
     function do_feed_podcast()
     {
+        $this->load_podcast_tags();
+
         load_template($this->locate_view_path('feed-podcast.php'));
     }
 
@@ -679,14 +729,355 @@ class Message_Manager
         update_post_meta($message_id, $meta_name, $meta);
     }
 
+    /**
+     * Gets the $num of most recent messages
+     * @param int $num The number of messages
+     * @return array
+     */
+    public function get_recent_messages($num = 5)
+    {
+        $messages = get_posts(array(
+            'numberposts' => $num,
+            'post_type' => MM_CPT_MESSAGE,
+            'post_status' => 'publish',
+            'meta_key' => MM_META_PREFIX . 'details_date',
+            'meta_value' => date('yy-mm-dd'),
+            'meta_compare' => '>=',
+            'orderby' => 'meta_value',
+            'order' => 'DESC',
+        ));
+
+        return is_wp_error($messages) ? array() : $messages;
+    }
+
+    /**
+     * Gets the messages in the series
+     * @param $series
+     * @param $num
+     * @return array
+     */
+    public function get_messages_in_series($series, $num = -1)
+    {
+        $messages = get_posts(array(
+            'posts_per_page' => $num,
+            'post_type' => MM_CPT_MESSAGE,
+            MM_TAX_SERIES => $series->slug,
+            'post_status' => 'publish',
+            'meta_key' => MM_META_PREFIX . 'details_date',
+            'meta_value' => date('yy-mm-dd'),
+            'meta_compare' => '>=',
+            'orderby' => 'meta_value',
+            'order' => 'DESC',
+        ));
+        return $messages;
+    }
+
+    /**
+     * @return mixed The latest message or null
+     */
+    public function get_latest_message()
+    {
+        $messages = $this->get_recent_messages(1);
+
+        return empty($message) ? null : $messages[0];
+    }
+
+    /**
+     * Returns all of the ids used to build the messages archive page
+     * @return array
+     */
+    public function get_filtered_message_ids()
+    {
+        global $wpdb;
+
+        $cpt_message = MM_CPT_MESSAGE;
+        $tax_series = MM_TAX_SERIES;
+        $date_meta = $this->message_details_mb->get_the_name('date');
+
+        $query = "
+            SELECT ids.ID FROM (
+                (SELECT {$wpdb->posts}.ID FROM {$wpdb->posts}
+                    WHERE {$wpdb->posts}.ID NOT IN (SELECT tr.object_id FROM {$wpdb->term_relationships} AS tr INNER JOIN {$wpdb->term_taxonomy} AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tt.taxonomy = '{$tax_series}')
+                    AND {$wpdb->posts}.post_type = '{$cpt_message}' AND ({$wpdb->posts}.post_status = 'publish' OR {$wpdb->posts}.post_status = 'private'))
+                UNION ALL
+                (SELECT series_message_ids.ID FROM (
+					SELECT {$wpdb->posts}.ID, term_id FROM wp_posts
+                    LEFT OUTER JOIN (SELECT tr.object_id, tt.* FROM {$wpdb->term_relationships} AS tr INNER JOIN {$wpdb->term_taxonomy} AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tt.taxonomy = '{$tax_series}') as join1 ON join1.object_id=ID
+                    LEFT OUTER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID AND {$wpdb->postmeta}.meta_key='{$date_meta}'
+                    WHERE {$wpdb->posts}.ID IN (SELECT tr.object_id FROM {$wpdb->term_relationships} AS tr INNER JOIN {$wpdb->term_taxonomy} AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tt.taxonomy = '{$tax_series}')
+                    AND {$wpdb->posts}.post_type = '{$cpt_message}' AND ({$wpdb->posts}.post_status = 'publish' OR {$wpdb->posts}.post_status = 'private')
+                    ORDER BY {$wpdb->postmeta}.meta_value DESC
+                    ) as series_message_ids
+                    GROUP BY term_id)
+            ) as ids
+            GROUP BY ids.ID";
+
+        $items = $wpdb->get_results($query, ARRAY_N);
+
+        if (!is_wp_error($items)) {
+            $ids = array();
+            foreach ($items as $item) {
+                $ids[] = $item[0];
+            }
+            return $ids;
+        }
+        return $items;
+    }
+
+    /**
+     * Gets information about a series by id.
+     * @param $term_id
+     * @return mixed
+     */
+    public function get_series_info($term_id)
+    {
+        global $wpdb;
+
+        $cpt_message = MM_CPT_MESSAGE;
+        $tax_series = MM_TAX_SERIES;
+        $meta_prefix = MM_META_PREFIX;
+
+        $term_id = $wpdb->escape($term_id);
+
+        $query =
+            "
+            SELECT * FROM (
+                (SELECT * from {$wpdb->terms}
+                WHERE {$wpdb->terms}.term_id = {$term_id}
+                LIMIT 1) as terms,
+
+                (SELECT ID as start_message_id, meta_value as start_message_date FROM {$wpdb->posts}
+                LEFT OUTER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID AND {$wpdb->postmeta}.meta_key='{$meta_prefix}details_date'
+                WHERE {$wpdb->posts}.id IN (SELECT tr.object_id FROM {$wpdb->term_relationships} AS tr INNER JOIN {$wpdb->term_taxonomy} AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tt.taxonomy = '{$tax_series}' AND tt.term_id={$term_id})
+                AND {$wpdb->posts}.post_type = '{$cpt_message}' AND ({$wpdb->posts}.post_status = 'publish' OR {$wpdb->posts}.post_status = 'private') ORDER BY meta_value ASC LIMIT 1) as tmp1,
+
+                (SELECT ID as end_message_id, meta_value as end_message_date FROM {$wpdb->posts}
+                LEFT OUTER JOIN {$wpdb->postmeta} ON {$wpdb->postmeta}.post_id = {$wpdb->posts}.ID AND {$wpdb->postmeta}.meta_key='{$meta_prefix}details_date'
+                WHERE {$wpdb->posts}.id IN (SELECT tr.object_id FROM {$wpdb->term_relationships} AS tr INNER JOIN {$wpdb->term_taxonomy} AS tt ON tr.term_taxonomy_id = tt.term_taxonomy_id WHERE tt.taxonomy = '{$tax_series}' AND tt.term_id={$term_id})
+                AND {$wpdb->posts}.post_type = '{$cpt_message}' AND ({$wpdb->posts}.post_status = 'publish' OR {$wpdb->posts}.post_status = 'private') ORDER BY meta_value DESC LIMIT 1) as tmp2
+            )
+            LEFT OUTER JOIN {$wpdb->term_taxonomy} ON {$wpdb->term_taxonomy}.term_id = terms.term_id
+            LIMIT 1";
+
+        $result = $wpdb->get_row($query);
+
+        return $result;
+    }
+
+    /**
+     * @param int|\WP_Post $post The post
+     * @return bool|mixed The series (term) or false
+     */
+    public function get_message_series($post = 0)
+    {
+        $series = get_the_terms($post, MM_TAX_SERIES);
+        if (!empty($series)) {
+            return array_pop($series);
+        }
+        return false;
+    }
+
+    /**
+     * @param $post WP_Post The post object
+     * @param bool $derive_from_series When true, if the thumbnail id is empty, the series image will be used.
+     * @return bool|int The thumbnail id of the post thumbnail or false
+     */
+    public function get_message_thumbnail_id($post, $derive_from_series = true)
+    {
+        if (empty($post)) return false;
+
+        $post_thumbnail_id = get_post_thumbnail_id($post->ID);
+
+        if (!$post_thumbnail_id && $derive_from_series) {
+            $series = $this->get_message_series($post);
+            $post_thumbnail_id = $this->get_series_thumbnail_id($series, false);
+        }
+
+        return $post_thumbnail_id;
+    }
+
+    /**
+     * @return bool|int The thumbnail id of the default message thumbnail or false if not set.
+     */
+    public function get_default_message_thumbnail_id()
+    {
+        $default = Message_Manager_Options::get_instance()->get('default-message-image');
+        if (!empty($default['id'])) {
+            return $default['id'];
+        }
+        return false;
+    }
+
+    /**
+     * @param $term The series
+     * @param bool $derive_from_posts When true, if the series image is empty, the posts in the series will be used to
+     * determine the id.
+     * @return bool|int The thumbnail id of the series thumbnail or false if not set
+     */
+    public function get_series_thumbnail_id($term, $derive_from_posts = true)
+    {
+        if (empty($term)) return false;
+
+        $post_thumbnail_id = false;
+
+        $image = get_tax_meta($term->term_id, MM_META_PREFIX . 'series_image');
+        if (!empty($image['id'])) {
+            $post_thumbnail_id = $image['id'];
+        }
+
+        if (!$post_thumbnail_id && $derive_from_posts) {
+            $posts = $this->get_messages_in_series($term);
+            if (!empty($posts) && !is_wp_error($posts)) {
+                foreach ($posts as $post) {
+                    $post_thumbnail_id = $this->get_message_thumbnail_id($post, false);
+                    if ($post_thumbnail_id) break;
+                }
+            }
+        }
+
+        return $post_thumbnail_id;
+    }
+
+    /**
+     * @return bool|int The thumbnail id of the default series image or false if not set
+     */
+    public function get_default_series_thumbnail_id()
+    {
+        $default = Message_Manager_Options::get_instance()->get('default-series-image');
+        if (!empty($default['id'])) {
+            return $default['id'];
+        }
+        return false;
+    }
+
+    /**
+     * Gets the message video meta data
+     * @param $post
+     * @return array
+     */
+    public function get_message_video($post)
+    {
+        $post = get_post($post);
+        $post_id = $post ? $post->ID : 0;
+        $meta_name = $this->message_media_mb->get_the_id();
+        $meta = get_post_meta($post_id, $meta_name, true);
+
+        return array(
+            'type' => empty($meta['video-type']) ? null : $meta['video-type'],
+            'url' => empty($meta['video-url']) ? null : $meta['video-url'],
+            'url-id' => empty($meta['video-url-id']) ? null : $meta['video-url-id'],
+            'embedded' => empty($meta['video-embedded']) ? null : $meta['video-embedded'],
+            'attachment' => empty($meta['video-attachment']) ? 'yes' : $meta['video-attachment']
+        );
+    }
+
+    /**
+     * Gets the message audio meta data
+     * @param $post
+     * @return array
+     */
+    public function get_message_audio($post)
+    {
+        $post = get_post($post);
+        $post_id = $post ? $post->ID : 0;
+        $meta_name = $this->message_media_mb->get_the_id();
+        $meta = get_post_meta($post_id, $meta_name, true);
+
+        return array(
+            'url' => empty($meta['audio-url']) ? null : $meta['audio-url'],
+            'url-id' => empty($meta['audio-url-id']) ? null : $meta['audio-url-id'],
+            'attachment' => empty($meta['audio-attachment']) ? 'yes' : $meta['audio-attachment']
+        );
+    }
+
+    /**
+     * Determine the mime type of a file
+     * @param $file
+     * @return string
+     */
+    public static function get_the_mime($file)
+    {
+        $mimes = array('ai', 'asf', 'bib', 'csv', 'deb', 'doc', 'docx', 'djvu', 'dmg', 'dwg', 'dwf', 'flac', 'gif', 'gz', 'indd', 'iso', 'jpg', 'log', 'm4v', 'midi', 'mkv', 'mov', 'mp3', 'mp4', 'mpeg', 'mpg', 'odp', 'ods', 'odt', 'oga', 'ogg', 'ogv', 'pdf', 'png', 'ppt', 'pptx', 'psd', 'ra', 'ram', 'rm', 'rpm', 'rv', 'skp', 'spx', 'tar', 'tex', 'tgz', 'txt', 'vob', 'wmv', 'xls', 'xlsx', 'xml', 'xpi', 'zip');
+
+        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+        if (!empty($ext)) {
+            if (in_array($ext, $mimes)) {
+                return $ext;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get a list of the downloads associated with a message
+     * @param $post
+     * @return array
+     */
+    public function get_message_downloads($post)
+    {
+        $post = get_post($post);
+        $post_id = $post ? $post->ID : 0;
+
+        $attachments = array();
+
+        // video attachments
+        $video = $this->get_message_video($post);
+        if ($video['type'] == 'url' && $video['attachment'] == 'yes' && (!empty($video['url']) || !empty($video['url-id']))) {
+            $attachments[] = array('type' => 'video', 'url' => $video['url'], 'id' => $video['url-id']);
+        }
+
+        // audio attachments
+        $audio = $this->get_message_audio($post);
+        if ($audio['attachment'] == 'yes' && (!empty($audio['url']) || !empty($audio['url-id']))) {
+            $attachments[] = array('type' => 'audio', 'url' => $audio['url'], 'id' => $audio['url-id']);
+        }
+
+        // file attachments
+        $meta_name = $this->message_attachments_mb->get_the_id();
+        $files = get_post_meta($post_id, $meta_name, true);
+        if (!empty($files['attachment'])) {
+            $files = $files['attachment'];
+        }
+        if (!empty($files)) {
+            foreach ($files as $file) {
+                if (!empty($file['url']) || !empty($file['url-id'])) {
+                    $title = empty($file['title']) ? null : $file['title'];
+                    $description = empty($file['description']) ? null : $file['description'];
+                    $attachments[] = array('type' => 'attachment', 'url' => $file['url'], 'id' => $file['url-id'], 'title' => $title, 'description' => $description);
+                }
+            }
+        }
+
+        $downloads = array();
+
+        // post process attachments
+        foreach ($attachments as $attachment) {
+            $url = Message_Manager_Downloads::get_instance()->get_download_url($attachment['id']);
+            if (empty($url)) {
+                $url = Message_Manager_Downloads::get_instance()->get_download_url($attachment['url']);
+            }
+            $local = Message_Manager_Downloads::get_instance()->get_local_file($attachment['id']);
+            if (empty($local)) {
+                $local = Message_Manager_Downloads::get_instance()->get_local_file($attachment['url']);
+            }
+            if (!empty($url)) {
+                $mime_type = $this->get_the_mime($local);
+                $base_name = basename($local);
+                if (empty($mime_type)) {
+                    $mime_type = $this->get_the_mime($url);
+                    $base_name = basename($url);
+                }
+                $attachment['base_name'] = $base_name;
+                $attachment['download_url'] = $url;
+                $attachment['mime_type'] = $mime_type;
+
+                $downloads[] = $attachment;
+            }
+        }
+
+        return $downloads;
+    }
 }
 
 // initialize the plugin
 $message_manager = Message_Manager::get_instance();
-
-function do_not_cache_feeds(&$feed)
-{
-    $feed->enable_cache(false);
-}
-
-add_action('wp_feed_options', 'do_not_cache_feeds');

@@ -12,6 +12,6 @@ $series_meta = new MM_Tax_Meta_Class(array(
     'use_with_theme' => MM_VENDOR_URL . 'tax-meta-class'
 ));
 
-$series_meta->addImage(MM_META_PREFIX . 'series_image', array('name' => 'Series Image'));
+$series_meta->addImage(MM_META_PREFIX . 'series_image', array('name' => 'Series Image (16:9)'));
 
 $series_meta->Finish();

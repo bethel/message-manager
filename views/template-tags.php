@@ -1,21 +1,118 @@
 <?php
-
-if (!function_exists('mm_sanitize_podcast_text')) {
-    /**
-     * Sanitizes feed data to ensure validity
-     * @param $text String the text to sanitize
-     * @return string The sanitized text
-     */
-    function mm_sanitize_podcast_text($text)
+if (!function_exists('mm_get_latest_message')) {
+    function mm_get_latest_message()
     {
-        return convert_chars(strip_tags($text));
+        return Message_Manager::get_instance()->get_latest_message();
     }
 }
 
-if (!function_exists('mm_force_http')) {
-    function mm_force_http($url)
+
+if (!function_exists('mm_get_the_permalink')) {
+    function mm_get_the_permalink($post = 0, $maybe_series = true)
     {
-        return preg_replace('/^https/i', 'http', $url);
+        $post = get_post($post);
+        if ($maybe_series && is_post_type_archive(MM_CPT_MESSAGE)) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                return get_term_link($series);
+            }
+        }
+        return get_permalink($post);
+    }
+}
+
+
+if (!function_exists('mm_the_permalink')) {
+    function mm_the_permalink($maybe_series = true, $post = 0)
+    {
+        echo esc_url(apply_filters('the_permalink', mm_get_the_permalink($post, $maybe_series)));
+    }
+}
+
+if (!function_exists('mm_get_the_thumbnail_internal')) {
+    function mm_get_the_thumbnail_internal($post_thumbnail_id = 0, $post_id, $size = 'post-thumbnail', $attr = '')
+    {
+        if (empty($post_thumbnail_id)) return;
+
+        $size = apply_filters('post_thumbnail_size', $size);
+        if ($post_thumbnail_id) {
+            do_action('begin_fetch_post_thumbnail_html', $post_id, $post_thumbnail_id, $size);
+            if (in_the_loop())
+                update_post_thumbnail_cache();
+            $html = wp_get_attachment_image($post_thumbnail_id, $size, false, $attr);
+            do_action('end_fetch_post_thumbnail_html', $post_id, $post_thumbnail_id, $size);
+        } else {
+            $html = '';
+        }
+        return apply_filters('post_thumbnail_html', $html, $post_id, $post_thumbnail_id, $size, $attr);
+    }
+}
+
+if (!function_exists('mm_get_the_thumbnail')) {
+    function mm_get_the_thumbnail($post = 0, $size = MM_CPT_MESSAGE, $attr = '', $maybe_series = true)
+    {
+        $post = get_post($post);
+
+        $post_thumbnail_id = 0;
+
+        if ($maybe_series && is_post_type_archive(MM_CPT_MESSAGE)) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                $post_thumbnail_id = Message_Manager::get_instance()->get_series_thumbnail_id($series, false);
+            }
+        }
+
+        if (!$post_thumbnail_id) {
+            $post_thumbnail_id = Message_Manager::get_instance()->get_message_thumbnail_id($post, false);
+        }
+
+        if ($maybe_series && is_post_type_archive(MM_CPT_MESSAGE)) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                $post_thumbnail_id = Message_Manager::get_instance()->get_series_thumbnail_id($series, true);
+                if (!$post_thumbnail_id) {
+                    $post_thumbnail_id = Message_Manager::get_instance()->get_default_series_thumbnail_id();
+                }
+            }
+        }
+
+        if (!$post_thumbnail_id) {
+            $post_thumbnail_id = Message_Manager::get_instance()->get_default_message_thumbnail_id();
+        }
+
+        return mm_get_the_thumbnail_internal($post_thumbnail_id, $post, $size, $attr);
+    }
+}
+
+if (!function_exists('mm_the_thumbnail')) {
+    function mm_the_thumbnail($size = MM_CPT_MESSAGE, $attr = '', $maybe_series = true, $post = 0)
+    {
+        echo mm_get_the_thumbnail($post, $size, $attr, $maybe_series);
+    }
+}
+
+if (!function_exists('mm_get_the_title')) {
+    function mm_get_the_title($post = 0, $maybe_series = true)
+    {
+        $post = get_post($post);
+        if ($maybe_series && is_post_type_archive(MM_CPT_MESSAGE)) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                if (!empty($series->name)) {
+                    return apply_filters('the_title', $series->name, 0);
+                } else {
+                    return __('Series: ' . get_the_title($post), 'message-manager');
+                }
+            }
+        }
+        return get_the_title($post);
+    }
+}
+
+if (!function_exists('mm_the_title')) {
+    function mm_the_title($maybe_series = true, $post = 0)
+    {
+        echo mm_get_the_title($post, $maybe_series);
     }
 }
 
@@ -31,464 +128,495 @@ if (!function_exists('mm_format_date')) {
     }
 }
 
-if (!function_exists('mm_get_the_podcast_title')) {
-    function mm_get_the_podcast_title()
+if (!function_exists('mm_get_the_date')) {
+    function mm_get_the_date($post = 0, $format = '', $maybe_series = true)
     {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-title', get_the_title_rss()));
-    }
-}
+        $post = get_post($post);
+        $post_id = empty($post) ? 0 : $post->ID;
 
-if (!function_exists('mm_the_podcast_title')) {
-    function mm_the_podcast_title()
-    {
-        echo mm_get_the_podcast_title();
-    }
-}
+        if ($maybe_series && is_post_type_archive(MM_CPT_MESSAGE)) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                if (empty($format)) $format = 'F Y';
 
-if (!function_exists('mm_get_the_podcast_link')) {
-    function mm_get_the_podcast_link()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-link', home_url('/')));
-    }
-}
+                $series_info = Message_Manager::get_instance()->get_series_info($series->term_id);
 
-if (!function_exists('mm_the_podcast_link')) {
-    function mm_the_podcast_link()
-    {
-        echo mm_get_the_podcast_link();
-    }
-}
+                if (!empty($series_info->start_message_date)) {
+                    $start = $series_info->start_message_date;
+                    $end = $series_info->end_message_date;
 
-if (!function_exists('mm_get_the_podcast_language')) {
-    function mm_get_the_podcast_language()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-language', get_bloginfo_rss('language')));
-    }
-}
+                    $start = mm_format_date($start, $format);
+                    $end = mm_format_date($end, $format);
 
-if (!function_exists('mm_the_podcast_language')) {
-    function mm_the_podcast_language()
-    {
-        echo mm_get_the_podcast_language();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_copyright')) {
-    function mm_get_the_podcast_copyright()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-copyright', '&#x2117; &amp; &#xA9; ' . get_bloginfo_rss('name')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_copyright')) {
-    function mm_the_podcast_copyright()
-    {
-        echo mm_get_the_podcast_copyright();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_subtitle')) {
-    function mm_get_the_podcast_subtitle()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-subtitle', get_bloginfo_rss('description')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_subtitle')) {
-    function mm_the_podcast_subtitle()
-    {
-        echo mm_get_the_podcast_subtitle();
-    }
-}
-
-
-if (!function_exists('mm_get_the_podcast_author')) {
-    function mm_get_the_podcast_author()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-author', get_bloginfo_rss('name')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_author')) {
-    function mm_the_podcast_author()
-    {
-        echo mm_get_the_podcast_author();
-    }
-}
-
-
-if (!function_exists('mm_get_the_podcast_summary')) {
-    function mm_get_the_podcast_summary()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-summary', get_bloginfo_rss('description')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_summary')) {
-    function mm_the_podcast_summary()
-    {
-        echo mm_get_the_podcast_summary();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_description')) {
-    function mm_get_the_podcast_description()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-description', get_bloginfo_rss('description')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_description')) {
-    function mm_the_podcast_description()
-    {
-        echo mm_get_the_podcast_description();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_owner_name')) {
-    function mm_get_the_podcast_owner_name()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-owner-name', get_bloginfo_rss('name')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_owner_name')) {
-    function mm_the_podcast_owner_name()
-    {
-        echo mm_get_the_podcast_owner_name();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_owner_email')) {
-    function mm_get_the_podcast_owner_email()
-    {
-        return mm_sanitize_podcast_text(Message_Manager_Options::get_instance()->get('podcast-owner-email', get_bloginfo_rss('admin_email')));
-    }
-}
-
-if (!function_exists('mm_the_podcast_owner_email')) {
-    function mm_the_podcast_owner_email()
-    {
-        echo mm_get_the_podcast_owner_email();
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_image')) {
-    function mm_get_the_podcast_image()
-    {
-        $image = Message_Manager_Options::get_instance()->get('podcast-image');
-        if (!empty($image)) {
-            $src = wp_get_attachment_image_src($image['id'], 'full');
-            if (!empty($src)) {
-                return esc_url(mm_force_http($src[0]));
-            }
-        }
-    }
-}
-
-if (!function_exists('mm_the_podcast_image')) {
-    function mm_the_podcast_image()
-    {
-        if ($image = mm_get_the_podcast_image()) {
-            echo sprintf('<itunes:image href="%s"/>', $image);
-        }
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_keywords')) {
-    function mm_get_the_podcast_keywords()
-    {
-        $keywords = Message_Manager_Options::get_instance()->get('podcast-keywords');
-        if (!empty($keywords)) {
-            return mm_sanitize_podcast_text($keywords);
-        }
-    }
-}
-
-if (!function_exists('mm_the_podcast_keywords')) {
-    function mm_the_podcast_keywords()
-    {
-        if ($keywords = mm_get_the_podcast_keywords()) {
-            echo sprintf('<itunes:keywords>%s</itunes:keywords>', $keywords);
-        }
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_categories')) {
-    function mm_get_the_podcast_categories()
-    {
-        $cats = array();
-        $categories = Message_Manager_Options::get_instance()->get('podcast-categories', 'Religion & Spirituality => Christianity, Spirituality');
-        if ($categories) {
-
-            $categories = preg_split("/(\r\n|\n|\r)/", $categories);
-            foreach ($categories as $category) {
-                $pieces = explode('=>', $category);
-                $category = trim($pieces[0]);
-
-                if (count($pieces) > 1) {
-                    $cats[$category] = explode(',', $pieces[1]);
-                } else {
-                    $cats[$category] = array();
-                }
-            }
-        }
-        return $cats;
-    }
-}
-
-if (!function_exists('mm_the_podcast_categories')) {
-    function mm_the_podcast_categories()
-    {
-        $categories = mm_get_the_podcast_categories();
-        if (!empty($categories)) {
-            foreach ($categories as $category => $subcats) {
-                if (!empty($category)) {
-                    echo sprintf('<itunes:category text="%s">', mm_sanitize_podcast_text(trim($category)));
-                    foreach ($subcats as $subcat) {
-                        echo sprintf('<itunes:category text="%s"/>', mm_sanitize_podcast_text(trim($subcat)));
-                    }
-                    echo '</itunes:category>';
-                }
-            }
-        }
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_audio')) {
-    function mm_get_the_podcast_audio()
-    {
-        $mb = Message_Manager::get_instance()->message_media_mb;
-        $mb->the_meta();
-
-        $attachment_id = $mb->get_the_value('audio-url-id');
-        $url = $mb->get_the_value('audio-url');
-
-        if (empty($attachment_id) && empty($url)) return;
-
-        if (!empty($attachment_id)) {
-            $info = Message_Manager_Downloads::get_instance()->get_id3_info($attachment_id);
-            $url = wp_get_attachment_url($attachment_id);
-        } else {
-            $info = Message_Manager_Downloads::get_instance()->get_id3_info($url);
-        }
-
-        $url = mm_force_http($url);
-
-        $duration = false;
-        if (!empty($info['playtime_seconds'])) {
-            $duration = gmdate("H:i:s", round($info['playtime_seconds']));
-        }
-
-        $size = false;
-        if (!empty($info['filesize'])) {
-            $size = $info['filesize'];
-        }
-
-        $mime = 'audio/mpeg';
-        if (!empty($info['mime_type'])) {
-            $mime = $info['mime_type'];
-        }
-
-        return array('url' => $url, 'url-id' => $attachment_id, 'duration' => $duration, 'size' => $size, 'mime' => $mime);
-    }
-}
-
-if (!function_exists('mm_get_the_podcast_attachments')) {
-    function mm_get_the_podcast_attachments()
-    {
-        $pdf_attachments = array();
-
-        $attachments = get_post_meta(get_the_ID(), Message_Manager::get_instance()->message_attachments_mb->get_the_id(), TRUE);
-        if (empty($attachments['attachment'])) return $pdf_attachments;
-        $attachments = $attachments['attachment'];
-
-        if (!empty($attachments)) {
-            foreach ($attachments as $attachment) {
-                if (empty($attachment['url-id']) && empty($attachment['url'])) continue;
-
-                if (!empty($attachment['url-id'])) {
-                    $attachment['url'] = wp_get_attachment_url($attachment['url-id']);
-                }
-
-                $attachment['url'] = mm_force_http($attachment['url']);
-
-                $pathinfo = pathinfo($attachment['url']);
-                if (!empty($pathinfo['extension'])) {
-                    if (!strtolower($pathinfo['extension']) == 'pdf') {
-                        continue;
-                    }
-
-                    if (!empty($attachment['url-id'])) {
-                        $attachment['size'] = Message_Manager_Downloads::get_instance()->get_file_size($attachment['url-id']);
+                    if ($start == $end) {
+                        return $start;
                     } else {
-                        $attachment['size'] = Message_Manager_Downloads::get_instance()->get_file_size($attachment['url']);
+                        return $start . ' - ' . $end;
                     }
-
-                    $attachment['mime'] = 'application/pdf';
-                    $pdf_attachments[] = $attachment;
                 }
             }
-
         }
-        return $pdf_attachments;
+
+        if (empty($format)) $format = 'F j, Y';
+
+        Message_Manager::get_instance()->message_details_mb->the_meta($post_id);
+        $date = Message_Manager::get_instance()->message_details_mb->get_the_value('date');
+        if (empty($date)) {
+            $date = get_post_modified_time('Y-m-d', false, $post, false);
+        }
+
+        return mm_format_date($date, $format);
     }
 }
 
-if (!function_exists('mm_get_the_title_rss')) {
-    function mm_get_the_title_rss($attachment = null)
+if (!function_exists('mm_the_date')) {
+    function mm_the_date($format = '', $maybe_series = true, $post = 0)
     {
-        $title = get_the_title_rss();
-        if ($attachment) {
-            if (!empty($attachment['title'])) {
-                $title .= ' - ' . $attachment['title'];
-            } else if (!empty($attachment['url'])) {
-                $title .= ' - ' . basename($attachment['url']);
+        echo mm_get_the_date($post, $format, $maybe_series);
+    }
+}
+
+if (!function_exists('mm_get_the_term')) {
+    function mm_get_the_term($term = 0, $taxonomy = MM_TAX_SERIES)
+    {
+        if (empty($term)) {
+            $temp = get_queried_object();
+            if (!empty($temp->term_id)) {
+                $term = $temp;
             }
         }
-        return mm_sanitize_podcast_text($title);
+        if (is_numeric($term)) {
+            $term = get_term_by('id', $term, $taxonomy);
+        } else if (is_string($term)) {
+            $term = get_term_by('slug', $term, $taxonomy);
+        }
+        return $term;
     }
 }
 
-if (!function_exists('mm_the_title_rss')) {
-    function mm_the_title_rss($attachment = null)
+if (!function_exists('mm_get_the_term_title')) {
+    function mm_get_the_term_title()
     {
-        echo mm_get_the_title_rss($attachment);
-    }
-}
+        $term = mm_get_the_term();
 
-if (!function_exists('mm_get_the_date_rss')) {
-    function mm_get_the_date_rss()
-    {
-        $mb = Message_Manager::get_instance()->message_details_mb;
-        $mb->the_meta();
-
-        $date = $mb->get_the_value('date');
-        $new_date = mm_format_date($date, 'D, d M Y H:i:s O');
-        if ($date == $new_date) {
-            return mm_sanitize_podcast_text($new_date);
+        if (!empty($term)) {
+            return $term->name;
         }
     }
 }
 
-if (!function_exists('mm_the_date_rss')) {
-    function mm_the_date_rss()
+if (!function_exists('mm_the_term_title')) {
+    function mm_the_term_title()
     {
-        if ($date = mm_get_the_date_rss()) {
-            echo sprintf('<pubDate>%s</pubDate>', $date);
+        echo esc_attr(mm_get_the_term_title());
+    }
+}
+
+if (!function_exists('mm_get_the_term_description')) {
+    function mm_get_the_term_description()
+    {
+        $term = mm_get_the_term();
+
+        if (!empty($term)) {
+            return $term->description;
         }
     }
 }
 
-if (!function_exists('mm_get_the_description_rss')) {
-    function mm_get_the_description_rss($attachment = null)
+if (!function_exists('mm_the_term_description')) {
+    function mm_the_term_description()
     {
-        if ($attachment) {
-            if (!empty($attachment['description'])) {
-                return mm_sanitize_podcast_text($attachment['description']);
-            } else {
-                return mm_sanitize_podcast_text('Attachment for message: ' . mm_get_the_title_rss());
+        echo mm_get_the_term_description();
+    }
+}
+
+if (!function_exists('mm_get_the_series_image')) {
+    function mm_get_the_series_image($series = 0, $size = MM_CPT_MESSAGE, $attr = '')
+    {
+        $series = mm_get_the_term($series);
+
+        if (empty($series)) return;
+
+        $thumbnail_id = Message_Manager::get_instance()->get_series_thumbnail_id($series, true);
+
+        if (!$thumbnail_id) {
+            $thumbnail_id = Message_Manager::get_instance()->get_default_series_thumbnail_id();
+        }
+
+        return mm_get_the_thumbnail_internal($thumbnail_id, 0, $size, $attr);
+    }
+}
+
+if (!function_exists('mm_the_series_image')) {
+    function mm_the_series_image($size = MM_CPT_MESSAGE, $attr = '')
+    {
+        echo mm_get_the_series_image(0, $size, $attr);
+    }
+}
+
+if (!function_exists('mm_has_video')) {
+    function mm_has_video($post = 0)
+    {
+        $post = get_post($post);
+
+        $video = Message_Manager::get_instance()->get_message_video($post);
+
+        return !(empty($video['url']) && empty($video['url-id']) && empty($video['embedded']));
+    }
+}
+
+if (!function_exists('mm_get_the_youtube_id')) {
+    function mm_get_the_youtube_id($url)
+    {
+        $id = preg_replace('~
+				# Match non-linked youtube URL in the wild. (Rev:20111012)
+				https?://         # Required scheme. Either http or https.
+				(?:[0-9A-Z-]+\.)? # Optional subdomain.
+				(?:               # Group host alternatives.
+				youtu\.be/      # Either youtu.be,
+				| youtube\.com    # or youtube.com followed by
+				\S*             # Allow anything up to VIDEO_ID,
+				[^\w\-\s]       # but char before ID is non-ID char.
+		)                 # End host alternatives.
+				([\w\-]{11})      # $1: VIDEO_ID is exactly 11 chars.
+				(?=[^\w\-]|$)     # Assert next char is non-ID or EOS.
+				(?!               # Assert URL is not pre-linked.
+				[?=&+%\w]*      # Allow URL (query) remainder.
+				(?:             # Group pre-linked alternatives.
+				[\'"][^<>]*>  # Either inside a start tag,
+				| </a>          # or inside <a> element text contents.
+		)               # End recognized pre-linked alts.
+		)                 # End negative lookahead assertion.
+				[?=&+%\w-]*        # Consume any URL (query) remainder.
+				~ix',
+            '$1',
+            $url);
+        if ($id == $url) return null;
+        return $id;
+    }
+}
+
+if (!function_exists('mm_get_the_vimeo_id')) {
+    function mm_get_the_vimeo_id($url)
+    {
+        $id = preg_replace('~https?://vimeo\.com\/([0-9]{1,10})~ix', '$1', $url);
+        if ($id == $url) return null;
+        return $id;
+    }
+}
+
+if (!function_exists('mm_get_the_video')) {
+    function mm_get_the_video($post = 0)
+    {
+        $post = get_post($post);
+        $video = Message_Manager::get_instance()->get_message_video($post);
+
+        if (!mm_has_video($post)) return;
+
+        $height = htmlentities(preg_replace('/[^0-9]/', '', Message_Manager_Options::get_instance()->get('video-height')));
+        $width = htmlentities(preg_replace('/[^0-9]/', '', Message_Manager_Options::get_instance()->get('video-width')));
+
+        $html = '';
+
+        $url = get_permalink($post);
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        switch ($video['type']) {
+            case 'url':
+                //todo:
+                break;
+            case 'vimeo':
+                $video_id = mm_get_the_vimeo_id($video['url']);
+                if (!empty($video_id)) {
+                    $options = htmlentities(Message_Manager_Options::get_instance()->get('vimeo-url-options'));
+                    $html .= '<div class="flex-video widescreen vimeo">';
+                    $html .= "<iframe src=\"{$scheme}://player.vimeo.com/video/{$video_id}{$options}\" width=\"$width\" height=\"$height\" frameborder=\"0\" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>";
+                    $html .= '</div>';
+                }
+                break;
+            case 'youtube':
+                $video_id = mm_get_the_youtube_id($video['url']);
+                if (!empty($video_id)) {
+                    $html .= '<div class="flex-video widescreen">';
+                    $html .= "<iframe class=\"youtube-player\" type=\"text/html\" width=\"$width\" height=\"$width\" src=\"{$scheme}://www.youtube.com/embed/$video_id\" frameborder=\"0\"></iframe>";
+                    $html .= '</div>';
+                }
+                break;
+            case 'embedded':
+                $html .= $video['embedded'];
+                break;
+        }
+
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_video')) {
+    function mm_the_video()
+    {
+        echo mm_get_the_video();
+    }
+}
+
+if (!function_exists('mm_has_audio')) {
+    function mm_has_audio($post = 0)
+    {
+        $post = get_post($post);
+
+        $audio = Message_Manager::get_instance()->get_message_audio($post);
+
+        return !(empty($audio['url']) && empty($audio['url-id']));
+    }
+}
+
+if (!function_exists('mm_get_the_audio')) {
+    function mm_get_the_audio($post = 0)
+    {
+        $post = get_post($post);
+        $audio = Message_Manager::get_instance()->get_message_audio($post);
+
+        if (!mm_has_audio($post)) return;
+
+        if (!empty($audio['url-id'])) {
+            $audio_url = wp_get_attachment_url($audio['url-id']);
+        }
+        if (empty($audio_url)) {
+            $audio_url = $audio['url'];
+        }
+        $id = 'audio_' . $post->ID;
+        $html = "<audio id=\"$id\" src=\"$audio_url\" type=\"audio/mp3\" controls=\"controls\"></audio>";
+        $html .= "<script type=\"text/javascript\">
+			//<![CDATA[
+			jQuery(document).ready(function($) {
+				$('#$id').mediaelementplayer({
+					features: ['playpause','progress','current','duration','volume','googleanalytics']
+				});
+			});
+			//]]>
+			</script>";
+
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_audio')) {
+    function mm_the_audio()
+    {
+        echo mm_get_the_audio();
+    }
+}
+
+if (!function_exists('mm_get_the_meta')) {
+    function mm_get_the_meta($post = 0)
+    {
+        $post = get_post($post);
+
+        $items = array();
+
+        $items[] = get_the_term_list($post->ID, MM_TAX_SPEAKER, '', ' &amp; ', '');
+        $items[] = mm_get_the_date($post, 'F j, Y');
+        Message_Manager::get_instance()->message_details_mb->the_meta($post);
+        $items[] = Message_Manager::get_instance()->message_details_mb->get_the_value('verses');
+
+        $html = '';
+
+        for ($i = 0; $i < count($items); $i++) {
+            $html .= $items[$i];
+            if ($i + 1 < count($items) && !empty($items[$i + 1])) {
+                $html .= ' / ';
             }
+        }
+
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_meta')) {
+    function mm_the_meta()
+    {
+        echo mm_get_the_meta();
+    }
+}
+
+if (!function_exists('mm_get_the_content')) {
+    function mm_get_the_content($post = 0)
+    {
+        $post = get_post($post);
+
+        $content = get_the_content(null, false, $post);
+        if (empty($content)) {
+            Message_Manager::get_instance()->message_details_mb->the_meta($post->ID);
+            $content = Message_Manager::get_instance()->message_details_mb->get_the_value('summary');
+        }
+        return $content;
+    }
+}
+
+if (!function_exists('mm_the_content')) {
+    function mm_the_content()
+    {
+        $post = get_post();
+        $content = apply_filters('the_content', mm_get_the_content($post), $post->ID);
+        echo str_replace(']]>', ']]&gt;', $content);
+    }
+}
+
+if (!function_exists('mm_get_the_back_button')) {
+    function mm_get_the_back_button($post = 0)
+    {
+        $post = get_post($post);
+
+        $series = Message_Manager::get_instance()->get_message_series($post);
+
+        if (empty($series)) {
+            $url = get_post_type_archive_link(MM_CPT_MESSAGE);
+            $html = "<h4>&larr; <a href=\"{$url}\" title=\"Return to Messages\">Return to Messages</a></h4>";
         } else {
-            $mb = Message_Manager::get_instance()->message_details_mb;
-            $mb->the_meta();
-
-            $summary = $mb->get_the_value('summary');
-            if (!$summary) {
-                $summary = get_the_content();
-            }
-            return mm_sanitize_podcast_text(strip_tags($summary));
-        }
-    }
-}
-
-if (!function_exists('mm_the_description_rss')) {
-    function mm_the_description_rss($attachment = null)
-    {
-        echo mm_get_the_description_rss($attachment);
-    }
-}
-
-
-if (!function_exists('mm_get_the_author_rss')) {
-    function mm_get_the_author_rss()
-    {
-        return mm_sanitize_podcast_text(get_the_term_list(get_the_ID(), MM_TAX_SPEAKER, '', ' &amp; ', ''));
-    }
-}
-
-if (!function_exists('mm_the_author_rss')) {
-    function mm_the_author_rss()
-    {
-        $author = mm_get_the_author_rss();
-        if (!empty($author)) {
-            echo sprintf('<itunes:author>%s</itunes:author>', $author);
-        }
-    }
-}
-
-if (!function_exists('mm_get_the_topics_rss')) {
-    function mm_get_the_topics_rss()
-    {
-        return mm_sanitize_podcast_text(get_the_term_list(get_the_ID(), MM_TAX_TOPICS, '', ', ', ''));
-    }
-}
-
-if (!function_exists('mm_the_topics_rss')) {
-    function mm_the_topics_rss()
-    {
-        $topics = mm_get_the_topics_rss();
-        if (!empty($topics)) {
-            echo sprintf('<itunes:keywords>%s</itunes:keywords>', $topics);
-        }
-    }
-}
-
-if (!function_exists('mm_the_enclosure_rss')) {
-    function mm_the_enclosure_rss($object)
-    {
-        if (empty($object)) return;
-
-        echo sprintf('<enclosure url="%s" length="%s" type="%s" />', $object['url'], $object['size'], $object['mime']);
-        echo sprintf('<guid>%s</guid>', $object['url']);
-
-        if (!empty($object['duration'])) {
-            echo sprintf('<itunes:duration>%s</itunes:duration>', $object['duration']);
-        }
-    }
-}
-
-if (!function_exists('mm_get_the_image_rss')) {
-    function mm_get_the_image_rss()
-    {
-        global $post;
-
-        $image = wp_get_attachment_image_src(get_post_thumbnail_id($post->ID), 'full');
-        if (!empty($image)) {
-            if (is_array($image)) {
-                $image = $image[0];
-            }
-            return $image;
+            $url = get_term_link($series, MM_TAX_SPEAKER);
+            $html = "<h4>&larr; <a href=\"{$url}\" title=\"Return to Series\">Return to Series</a></h4>";
         }
 
-        $series = get_the_terms($post->ID, MM_TAX_SERIES);
-        if (!empty($series)) {
-            $image = Message_Manager::get_instance()->get_series_image(array_pop($series)->slug);
-            if (!empty($image)) {
-                return $image;
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_back_button')) {
+    function mm_the_back_button()
+    {
+        echo mm_get_the_back_button();
+    }
+}
+
+if (!function_exists('mm_get_the_series_list')) {
+    function mm_get_the_series_list($post = 0, $show = 5)
+    {
+        $post = get_post($post);
+        $series = Message_Manager::get_instance()->get_message_series($post);
+
+        if (empty($series)) return;
+
+        $series_name = esc_attr($series->name);
+        $series_url = get_term_link($series, MM_TAX_SPEAKER);
+
+        $html = '<div class="mm-series-list-widget">';
+        $html .= "<h4>Series: <a href=\"$series_url\" title=\"$series_name\">$series_name</a></h4>";
+
+        $messages = Message_Manager::get_instance()->get_messages_in_series($series);
+        $count = count($messages);
+        if ($show > $count) {
+            $show = $count;
+        }
+
+        $message_index = -1;
+        $start = -1;
+        $end = -1;
+
+        for ($i = 0; $i < $count; $i++) {
+            if ($messages[$i]->ID == $post->ID) {
+                $message_index = $i;
+                $start = $message_index;
+                $end = $message_index;
+                while ($show > 0) {
+                    if ($end < $count && $show > 0) {
+                        $end++;
+                        $show--;
+                    }
+                    if ($start > 0 && $show > 0) {
+                        $start--;
+                        $show--;
+                    }
+                }
             }
         }
+        $html .= '<ul class="mm-series-list">';
+        for ($i = 0; $i < $count; $i++) {
+            if ($i < $start || $i >= $end)
+                continue;
 
-        return Message_Manager_Options::get_instance()->get('default-image');
+            $message = $messages[$i];
+
+            $title = esc_attr(mm_get_the_title($message));
+            $link = esc_url(mm_get_the_permalink($message));
+            $date = esc_attr(mm_get_the_date($message));
+
+            $html .= ($i == $message_index) ? '<li class="active">' : '<li>';
+            $html .= "<a href=\"$link\" title=\"$title\">";
+            $html .= '<h5>' . $title . '</h5>';
+            $html .= '<span>' . $date . '</span>';
+            $html .= '</a>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+        $html .= '</div>';
+
+        return $html;
     }
 }
 
-if (!function_exists('mm_the_image_rss')) {
-    function mm_the_image_rss()
+if (!function_exists('mm_the_series_list')) {
+    function mm_the_series_list()
     {
-        $image = mm_get_the_image_rss();
-        if (!empty($image)) {
-            echo sprintf('<itunes:image href="%s" />', mm_force_http($image));
+        echo mm_get_the_series_list();
+    }
+}
+
+if (!function_exists('mm_get_the_downloads')) {
+    function mm_get_the_downloads($post = 0)
+    {
+        $post = get_post($post);
+
+        $downloads = Message_Manager::get_instance()->get_message_downloads($post);
+
+        if (empty($downloads)) return;
+
+        $html = '<div class="mm-download-list-widget">';
+        $html .= "<h4>Downloads</h4>";
+
+        $html .= '<ul class="mm-download-list">';
+        foreach ($downloads as $download) {
+            if (empty($download['download_url'])) continue;
+
+            $html .= empty($download['mime_type']) ? '<li>' : "<li class=\"mm-mime-icon mm-mime-{$download['mime_type']}\">";
+
+            $title = '';
+            switch ($download['type']) {
+                case 'video':
+                    $title = 'Video';
+                    if (!empty($download['mime_type'])) {
+                        $title = strtoupper($download['mime_type']) . ' ' . $title;
+                    }
+                    break;
+                case 'audio':
+                    $title = 'Audio';
+                    if (!empty($download['mime_type'])) {
+                        $title = strtoupper($download['mime_type']) . ' ' . $title;
+                    }
+                    break;
+                case 'attachment':
+                    if (!empty($download['title'])) {
+                        $title = $download['title'];
+                    } else {
+                        $title = $download['base_name'];
+                    }
+                    break;
+            }
+            $title = esc_attr($title);
+
+            $html .= "<a href=\"{$download['download_url']}\" title=\"$title\">" . $title . "</a>";
+
+            $html .= '</li>';
         }
+        $html .= '</ul>';
+
+        $html .= '</div>';
+
+
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_downloads')) {
+    function mm_the_downloads()
+    {
+        echo mm_get_the_downloads();
     }
 }

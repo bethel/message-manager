@@ -19,8 +19,8 @@ $labels = array(
 $rewrite = array(
     'slug' => Message_Manager::get_instance()->get_base_slug(),
     'with_front' => true,
-    'pages' => true,
-    'feeds' => true,
+    'pages' => false,
+    'feeds' => false,
 );
 
 $args = array(
@@ -45,3 +45,4 @@ $args = array(
 register_post_type(MM_CPT_MESSAGE, $args);
 
 add_image_size(MM_CPT_MESSAGE, '220', '124', true);
+add_image_size(MM_CPT_MESSAGE.'_large', '305', '172', true);

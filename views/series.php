@@ -2,26 +2,19 @@
 /**
  * The Message Manager template for a series
  */
-
-$items = Message_Manager::get_items_from_posts();
-$series = array_pop($items);
-$messages = $series['messages'];
 ?>
 <?php get_header(); ?>
 
-    <div id="content" class="clearfix message_manager_series">
+    <div class="row">
+        <div id="primary" class="large-12 columns content-area" role="main">
 
-        <div id="main" class="large-12 columns clearfix" role="main">
-
-            <div class="row clearfix">&nbsp;</div>
-
-            <div class="row clearfix">
-                <div
-                    class="three columns"><?php Message_Manager::the_image($series, array('size' => Message_Manager::$tax_series)); ?></div>
-                <div class="eight columns"><h1><?php Message_Manager::the_title($series); ?></h1>
-                    <?php Message_Manager::the_content($series); ?>
+            <div class="row">
+                <div class="large-4 columns"><?php mm_the_series_image(MM_CPT_MESSAGE . '_large') ?></div>
+                <div class="large-7 columns">
+                    <h1><?php mm_the_term_title() ?></h1>
+                    <?php mm_the_term_description() ?>
                 </div>
-                <div class="one columns end">
+                <div class="large-1 columns">
                     <!-- AddThis Button BEGIN -->
                     <div class="addthis_toolbox addthis_counter_style">
                         <a class="addthis_button_facebook_like" fb:like:layout="box_count"></a>
@@ -39,37 +32,22 @@ $messages = $series['messages'];
 
             <hr>
 
-            <div class="message_manager_messages">
+            <h3>Series Messages</h3>
 
-                <?php
-                $i = 1;
-                while (!empty($messages)) :
-                    $message = array_shift($messages);
-                    $end = empty($messages);
-                    ?>
-
-                    <div class="three columns<?php echo ($end) ? ' end' : ''; ?> message_manager_message_box">
-
-                        <a href="<?php Message_Manager::the_link($message); ?>">
-                            <?php Message_Manager::the_image($message, array('size' => Message_Manager::$cpt_message)); ?>
-                            <h4><?php Message_Manager::the_title($message); ?></h4>
-                            <span><?php Message_Manager::the_date($message); ?></span>
+            <ul class="large-block-grid-4 small-block-grid-2 mm-message-grid">
+                <?php while (have_posts()): the_post() ?>
+                    <li>
+                        <a href="<?php mm_the_permalink() ?>" title="<?php echo esc_html(mm_the_title()) ?>">
+                            <?php mm_the_thumbnail(); ?>
+                            <h4><?php mm_the_title() ?></h4>
+                            <span><?php mm_the_date(); ?></span>
                         </a>
-
-                    </div>
-
-                    <?php if (!($i % 4) || $end): ?>
-                    <div class="clearfix"></div>
-                <?php endif; ?>
-
-                    <?php $i++; endwhile; ?>
-            </div>
-
-            <div class="clearfix"></div>
+                    </li>
+                <?php endwhile ?>
+            </ul>
 
         </div>
-        <!-- end #main -->
-
-    </div> <!-- end #content -->
+        <!-- end #primary -->
+    </div> <!-- end row -->
 
 <?php get_footer(); ?>

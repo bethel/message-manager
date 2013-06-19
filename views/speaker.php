@@ -2,8 +2,6 @@
 /**
  * The Message Manager template for a speaker page
  */
-
-$items = Message_Manager::get_items_from_posts(Message_Manager::$SERIES_OPT_NONE);
 ?>
 <?php get_header(); ?>
 
