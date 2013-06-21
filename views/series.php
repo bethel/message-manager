@@ -9,7 +9,7 @@
         <div id="primary" class="large-12 columns content-area" role="main">
 
             <div class="row">
-                <div class="large-4 columns"><?php mm_the_series_image(MM_CPT_MESSAGE . '_large') ?></div>
+                <div class="large-4 columns"><?php mm_the_series_thumbnail(MM_CPT_MESSAGE . '_large') ?></div>
                 <div class="large-7 columns">
                     <h1><?php mm_the_term_title() ?></h1>
                     <?php mm_the_term_description() ?>

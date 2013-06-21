@@ -4,74 +4,67 @@
  */
 ?>
 <?php get_header(); ?>
+    <div class="row">
+        <div id="primary" class="large-8 columns content-area" role="main">
+            <?php if (have_posts()) : ?>
+                <header class="archive-header">
+                    <h1 class="archive-title"><?php mm_the_term_title(); ?></h1>
 
-    <div id="content" class="clearfix message_manager_speaker">
+                    <?php if (term_description()) : // Show an optional category description ?>
+                        <div class="archive-meta"><?php echo term_description(); ?></div>
+                    <?php endif; ?>
+                </header><!-- .archive-header -->
 
-        <div id="main" class="eight columns clearfix" role="main">
+                <?php /* The loop */ ?>
+                <?php while (have_posts()) : the_post(); ?>
+                    <article id="post-<?php the_ID(); ?>" <?php post_class('clearfix'); ?> role="article">
+                        <div class="row">
+                            <div class="large-9 small-8 columns">
+                                <header>
+                                    <h4><a href="<?php mm_the_permalink(); ?>" rel="bookmark" title="<?php esc_attr(mm_the_title()); ?>"><?php mm_the_title(); ?></a></h4>
+                                    <span class="mm-date"><?php mm_the_date(); ?></span>
+                                </header>
+                                <section class="post_content">
+                                    <?php mm_the_excerpt(); ?>
+                                </section>
+                            </div>
+                            <div class="large-3 small-4 columns">
+                                <a href="<?php mm_the_permalink(); ?>" title="<?php esc_attr(mm_the_title()); ?>"><?php mm_the_thumbnail(MM_CPT_MESSAGE, array('align' => 'right')) ?></a>
+                            </div>
+                        </div>
+                    </article> <!-- end article -->
+                <?php endwhile; ?>
 
-            <h1 class="archive_title h2">
-                <?php single_tag_title(); ?>
-            </h1>
+                <?php foundation_pagination(); ?>
 
-            <?php while (!empty($items)):
-                $item = array_shift($items);
-                ?>
-
-                <article id="message-<?php Message_Manager::the_id($item); ?>" role="article">
-
-                    <?php Message_Manager::the_image($item, array('align' => 'right')); ?>
-
-                    <header>
-                        <a href="<?php Message_Manager::the_link($item); ?>" rel="bookmark"><h4>
-                                <?php Message_Manager::the_title($item); ?>
-                            </h4></a> <span><?php Message_Manager::the_date($item); ?> </span>
-                    </header>
-                    <!-- end article header -->
-
-                    <section class="post_content">
-
-                        <?php Message_Manager::the_excerpt($item); ?>
-                    </section>
-                    <!-- end article section -->
-
-                    <footer></footer>
-                    <!-- end article footer -->
-
-                </article>
-                <!-- end article -->
-
-            <?php endwhile; ?>
-
-            <?php if (function_exists('page_navi')) { // if expirimental feature is active ?>
-
-                <?php page_navi(); // use the page navi function ?>
-
-            <?php } else { // if it is disabled, display regular wp prev & next links ?>
-                <nav class="wp-prev-next">
-                    <ul class="clearfix">
-                        <li class="prev-link"><?php next_posts_link(_e('&laquo; Older Entries', "bonestheme")) ?></li>
-                        <li class="next-link"><?php previous_posts_link(_e('Newer Entries &raquo;', "bonestheme")) ?></li>
-                    </ul>
-                </nav>
-            <?php } ?>
-
+            <?php else : ?>
+                <?php get_template_part('content', 'none'); ?>
+            <?php endif; ?>
         </div>
-        <!-- end #main -->
-
-        <div class="sidebar four columns" role="complementary">
-
+        <!-- end #primary -->
+        <div class="large-4 columns sidebar mm-sidebar" role="complementary">
+            <?php mm_the_back_button(); ?>
             <div class="panel">
+                <?php mm_the_speaker_list(); ?>
 
-                <h5>&larr;<a href="<?php Message_Manager::the_link(); ?>" title="Return To Messages">Return to
-                        Messages</a></h5>
-
-                <hr>
-                <h4>All Speakers:</h4>
-                <?php Message_Manager::the_speaker_list(); ?>
+                <div class="mm-share-widget">
+                    <h4>Share</h4>
+                    <!-- AddThis Button BEGIN -->
+                    <div class="addthis_toolbox addthis_counter_style">
+                        <a class="addthis_button_facebook_like" fb:like:layout="box_count"
+                           style="float:left; z-index:100000;"></a>
+                        <a class="addthis_button_google_plusone" g:plusone:size="tall"
+                           style="float:left; margin-left: 5px;"></a>
+                        <a class="addthis_counter" style="float:left; margin-left: 10px;"></a>
+                    </div>
+                    <script type="text/javascript">
+                        var addthis_config = { ui_click: true };
+                    </script>
+                    <script type="text/javascript"
+                            src="https://s7.addthis.com/js/250/addthis_widget.js#pubid=xa-50482fcb481a8273"></script>
+                    <!-- AddThis Button END -->
+                </div>
             </div>
-
         </div>
     </div>
-    <!-- end #content -->
-
 <?php get_footer(); ?>

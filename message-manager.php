@@ -76,6 +76,7 @@ class Message_Manager
         add_filter('single_template', array($this, 'template_filter'));
         add_filter('archive_template', array($this, 'template_filter'));
         add_filter('taxonomy_template', array($this, 'template_filter'));
+        add_filter('search_template', array($this, 'template_filter'));
 
         // enqueue css and javascript
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
@@ -107,11 +108,6 @@ class Message_Manager
         remove_all_actions('do_feed_podcast');
         add_action('do_feed_podcast', array($this, 'do_feed_podcast'));
         add_filter('post_limits', array($this, 'remove_query_limit'), 1, 10);
-//
-//		// register the widget
-//		add_action('widgets_init', array($this, 'register_widget'));
-
-        add_action('wp_ajax_nopriv_mm_ajax_load_more', array($this, 'ajax_load_more'));
     }
 
     /**
@@ -129,7 +125,7 @@ class Message_Manager
 
     /**
      * Locates the path of a view file
-     * @param $view The view to locate
+     * @param $view string The view to locate
      * @return string The path of the view
      */
     public function locate_view_path($view)
@@ -145,7 +141,7 @@ class Message_Manager
 
     /**
      * Locates the url of a view file
-     * @param $view The view to locate
+     * @param $view string The view to locate
      * @return string The url of the view
      */
     public function locate_view_url($view)
@@ -174,7 +170,7 @@ class Message_Manager
 
     /**
      * Filters the template location to include plugin templates (filters: single_template, category_template, archive_template)
-     * @param $template The default template
+     * @param $template string The default template
      * @return string The filtered template
      */
     public function template_filter($template)
@@ -200,13 +196,15 @@ class Message_Manager
         } else if (is_tax(MM_TAX_BOOKS)) {
             $this->load_template_tags();
             $file = $this->locate_view_path('book.php');
+        } else if (is_search()) {
+            $this->load_template_tags();
         }
         return !empty($file) ? $file : $template;
     }
 
     /**
      * Gets a Message Manager Option
-     * @param $option The option name
+     * @param $option string The option name
      * @param bool $default A default value
      * @return mixed|void The option or false
      */
@@ -218,8 +216,8 @@ class Message_Manager
 
     /**
      * Sets/Creates a Message Manager Option
-     * @param $option The option name
-     * @param $value The value of the option
+     * @param $option string The option name
+     * @param $value string The value of the option
      * @param string $autoload If the option should be autoloaded with wordpress
      * @return bool True if set, false otherwise
      */
@@ -277,7 +275,7 @@ class Message_Manager
 
     /**
      * Filter request for series/message hierarchy (filter: request)
-     * @param $request The unfiltered request
+     * @param $request array The unfiltered request
      * @return mixed The filtered request
      */
     public function filter_request($request)
@@ -311,8 +309,8 @@ class Message_Manager
 
     /**
      * Modifies the post permalink to allow for series/message hierarchy (filters: post_link, post_type_link)
-     * @param $link The unfiltered permalink
-     * @param $post The post
+     * @param $link string The unfiltered permalink
+     * @param $post WP_Post The post
      * @return string The filtered permalink
      */
     public function filter_post_link($link, $post)
@@ -337,8 +335,8 @@ class Message_Manager
 
     /**
      * Modifies a term permalink (filter: term_link)
-     * @param $link The unfiltered permalink
-     * @param $term The term
+     * @param $link string The unfiltered permalink
+     * @param $term object The term
      * @return string The filtered permalink
      */
     public function filter_term_link($link, $term)
@@ -357,7 +355,7 @@ class Message_Manager
 
     /**
      * Adds a number of rewrite rules used by Message Manager (filter: rewrite_rules_array)
-     * @param $rules Rules to filter
+     * @param $rules array Rules to filter
      * @return array Filtered rules
      */
     public function filter_rewrite_rules_array($rules)
@@ -569,8 +567,8 @@ class Message_Manager
 
     /**
      * Sets the date of a message
-     * @param $message_id the message id
-     * @param $date the date in the format yyyy-mm-dd
+     * @param $message_id int the message id
+     * @param $date string the date in the format yyyy-mm-dd
      */
     public function set_message_date($message_id, $date)
     {
@@ -580,8 +578,8 @@ class Message_Manager
 
     /**
      * Sets the verses of a message
-     * @param $message_id the message id
-     * @param $verses Semi-colon seperated list of verses
+     * @param $message_id int the message id
+     * @param $verses string Semi-colon seperated list of verses
      */
     public function set_message_verses($message_id, $verses)
     {
@@ -671,9 +669,9 @@ class Message_Manager
     }
 
     /**
-     * Sets the video for a mesasge
+     * Sets the video for a message
      * @param $message_id
-     * @param $type url|vimeo|youtube|embedded
+     * @param $type string url|vimeo|youtube|embedded
      * @param $value
      * @param boolean $show_in_attachments
      */

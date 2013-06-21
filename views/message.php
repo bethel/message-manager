@@ -74,8 +74,6 @@
                                 src="https://s7.addthis.com/js/250/addthis_widget.js#pubid=xa-50482fcb481a8273"></script>
                         <!-- AddThis Button END -->
                     </div>
-
-                    </ul>
                 </div>
             </div>
             <!-- end sidebar -->

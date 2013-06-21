@@ -230,8 +230,8 @@ if (!function_exists('mm_the_term_description')) {
     }
 }
 
-if (!function_exists('mm_get_the_series_image')) {
-    function mm_get_the_series_image($series = 0, $size = MM_CPT_MESSAGE, $attr = '')
+if (!function_exists('mm_get_the_series_thumbnail')) {
+    function mm_get_the_series_thumbnail($series = 0, $size = MM_CPT_MESSAGE, $attr = '')
     {
         $series = mm_get_the_term($series);
 
@@ -247,10 +247,10 @@ if (!function_exists('mm_get_the_series_image')) {
     }
 }
 
-if (!function_exists('mm_the_series_image')) {
-    function mm_the_series_image($size = MM_CPT_MESSAGE, $attr = '')
+if (!function_exists('mm_the_series_thumbnail')) {
+    function mm_the_series_thumbnail($size = MM_CPT_MESSAGE, $attr = '')
     {
-        echo mm_get_the_series_image(0, $size, $attr);
+        echo mm_get_the_series_thumbnail(0, $size, $attr);
     }
 }
 
@@ -437,6 +437,23 @@ if (!function_exists('mm_the_meta')) {
     }
 }
 
+if (!function_exists('mm_get_the_summary')) {
+    function mm_get_the_summary($post = 0) {
+        $post = get_post($post);
+
+        Message_Manager::get_instance()->message_details_mb->the_meta($post->ID);
+        return Message_Manager::get_instance()->message_details_mb->get_the_value('summary');
+    }
+}
+
+if (!function_exists('mm_the_summary')) {
+    function mm_the_summary() {
+        $post = get_post();
+        $summary = apply_filters('the_content', mm_get_the_summary($post), $post->ID);
+        echo str_replace(']]>', ']]&gt;', $summary);
+    }
+}
+
 if (!function_exists('mm_get_the_content')) {
     function mm_get_the_content($post = 0)
     {
@@ -444,8 +461,7 @@ if (!function_exists('mm_get_the_content')) {
 
         $content = get_the_content(null, false, $post);
         if (empty($content)) {
-            Message_Manager::get_instance()->message_details_mb->the_meta($post->ID);
-            $content = Message_Manager::get_instance()->message_details_mb->get_the_value('summary');
+            $content = mm_get_the_summary($post);
         }
         return $content;
     }
@@ -465,17 +481,16 @@ if (!function_exists('mm_get_the_back_button')) {
     {
         $post = get_post($post);
 
-        $series = Message_Manager::get_instance()->get_message_series($post);
-
-        if (empty($series)) {
-            $url = get_post_type_archive_link(MM_CPT_MESSAGE);
-            $html = "<h4>&larr; <a href=\"{$url}\" title=\"Return to Messages\">Return to Messages</a></h4>";
-        } else {
-            $url = get_term_link($series, MM_TAX_SPEAKER);
-            $html = "<h4>&larr; <a href=\"{$url}\" title=\"Return to Series\">Return to Series</a></h4>";
+        if (is_single()) {
+            $series = Message_Manager::get_instance()->get_message_series($post);
+            if (!empty($series)) {
+                $url = get_term_link($series, MM_TAX_SERIES);
+                return "<h4>&larr; <a href=\"{$url}\" title=\"Return to Series\">Return to Series</a></h4>";
+            }
         }
 
-        return $html;
+        $url = get_post_type_archive_link(MM_CPT_MESSAGE);
+        return "<h4>&larr; <a href=\"{$url}\" title=\"Return to Messages\">Return to Messages</a></h4>";
     }
 }
 
@@ -618,5 +633,55 @@ if (!function_exists('mm_the_downloads')) {
     function mm_the_downloads()
     {
         echo mm_get_the_downloads();
+    }
+}
+
+if (!function_exists('mm_get_the_excerpt')) {
+    function mm_get_the_excerpt($post = 0) {
+        $post = get_post($post);
+
+        $content = $post->post_content;
+        if (empty($content)) {
+            $content = mm_get_the_summary($post);
+        }
+        $content = apply_filters('the_excerpt', $content);
+        return wp_trim_excerpt($content);
+    }
+}
+
+if (!function_exists('mm_the_excerpt')) {
+    function mm_the_excerpt() {
+        echo mm_get_the_excerpt();
+    }
+}
+
+if (!function_exists('mm_get_the_speaker_list')) {
+    function mm_get_the_speaker_list() {
+        $terms = get_terms(MM_TAX_SPEAKER, array(
+            'order'=>'DESC', 'orderby'=>'count','hide_empty' => true
+        ));
+
+        if (empty($terms)) return;
+
+
+        $html = '<div class="mm-download-list-widget">';
+        $html .= "<h4>All Speakers</h4>";
+
+        $html .= '<ul class="mm-speaker-list">';
+        foreach ($terms as $term) {
+            $html .= '<li>';
+            $html .= '<a href="'.get_term_link($term).'" title="' . sprintf(__('View all messages by %s', 'message-manager'), $term->name) . '">' . $term->name . '</a>';
+            $html .= '</li>';
+        }
+        $html .= '</ul>';
+
+        $html .= '</div>';
+        return $html;
+    }
+}
+
+if (!function_exists('mm_the_speaker_list')) {
+    function mm_the_speaker_list() {
+        echo mm_get_the_speaker_list();
     }
 }

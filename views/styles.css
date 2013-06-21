@@ -52,21 +52,25 @@
     font-size: 80%;
 }
 
-/* speakers */
-/*.message_manager_speaker article {*/
-/*clear: both;*/
-/*margin-bottom: 2em;*/
-/*}*/
+/* Term List */
+.tax-mm_tax_speaker .primary h4 {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
 
-/*.message_manager_speaker header h4 {*/
-/*margin-bottom: 0px;*/
-/*}*/
+.tax-mm_tax_speaker .primary img {
+    margin: 0 0 1.4em 1.4em;
+    padding: 0;
+}
 
-/*.message_manager_speaker header span {*/
-/*display: block;*/
-/*margin-bottom: 14px;*/
-/*color: gray;*/
-/*}*/
+.tax-mm_tax_speaker .post_content {
+    margin-top: 1em;
+}
+
+.tax-mm_tax_speaker .mm-date {
+    display: block;
+    font-size: 80%;
+}
 
 /* series list */
 .mm-series-list {
