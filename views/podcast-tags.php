@@ -10,6 +10,7 @@ if (!function_exists('mm_sanitize_podcast_text')) {
     {
         $text = strip_tags($text);
         $text = convert_chars($text);
+        $text = str_replace('&nbsp;', '&#160;', $text);
         return $text;
     }
 }
