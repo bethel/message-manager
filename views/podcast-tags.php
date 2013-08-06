@@ -10,7 +10,7 @@ if (!function_exists('mm_sanitize_podcast_text')) {
     {
         $text = strip_tags($text);
         $text = convert_chars($text);
-        $text = filter_var($text, FILTER_SANITIZE_STRING);
+        $text = preg_replace('/&#?[a-z0-9]{2,8};/i', '', $text);
         return $text;
     }
 }
