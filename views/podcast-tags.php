@@ -8,7 +8,10 @@ if (!function_exists('mm_sanitize_podcast_text')) {
      */
     function mm_sanitize_podcast_text($text)
     {
-        return convert_chars(strip_tags($text));
+        $text = strip_tags($text);
+        $text = convert_chars($text);
+        $text = filter_var($text, FILTER_SANITIZE_STRING);
+        return $text;
     }
 }
 
