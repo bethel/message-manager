@@ -113,6 +113,7 @@ class Message_Manager_Downloads
      */
     public function get_download_url($attachment)
     {
+        if (empty($attachment)) return;
         if (!get_option('permalink_structure')) {
             return get_site_url() . '?' . MM_DOWNLOAD_QUERY_VAR . '=' . $this->base64url_encode($attachment);
         } else {
