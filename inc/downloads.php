@@ -95,12 +95,18 @@ class Message_Manager_Downloads
             header('Cache-Control: must-revalidate');
             header('Pragma: public');
             header('Content-Length: ' . filesize($file));
-            ob_clean();
-            flush();
-            if (@readfile($file) === false) {
-                header_remove();
-                die(__("An error occurred while downloading file.", 'message-manager'));
+
+            ob_end_flush();
+
+            $handle = fopen($file, 'rb');
+            while (!feof($handle)) {
+                $buffer = fread($handle, 4096);
+                echo $buffer;
+                ob_flush();
+                flush();
             }
+            fclose($handle);
+
             exit;
         }
         return $request;
