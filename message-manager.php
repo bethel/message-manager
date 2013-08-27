@@ -540,7 +540,7 @@ class Message_Manager
         if (is_admin()) return $limit;
 
         if (is_feed('podcast')) {
-            return 'LIMIT 0, 99999';
+            return 'LIMIT 100';
         }
 
         return $limit;
