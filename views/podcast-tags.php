@@ -22,13 +22,6 @@ if (!function_exists('mm_force_http')) {
     }
 }
 
-if (!function_exists('mm_strip_query')) {
-    function mm_strip_query($url)
-    {
-        return strtok($url, '?');
-    }
-}
-
 if (!function_exists('mm_format_date')) {
     function mm_format_date($date, $format = 'j-m-y')
     {
@@ -190,7 +183,7 @@ if (!function_exists('mm_get_the_podcast_image')) {
         if (!empty($image)) {
             $src = wp_get_attachment_image_src($image['id'], 'full');
             if (!empty($src)) {
-                return esc_url(mm_strip_query(mm_force_http($src[0])));
+                return esc_url(mm_force_http($src[0]));
             }
         }
     }
@@ -478,18 +471,18 @@ if (!function_exists('mm_get_the_image_rss')) {
             if (is_array($image)) {
                 $image = $image[0];
             }
-            return mm_strip_query($image);
+            return $image;
         }
 
         $series = get_the_terms($post->ID, MM_TAX_SERIES);
         if (!empty($series)) {
             $image = Message_Manager::get_instance()->get_series_image(array_pop($series)->slug);
             if (!empty($image)) {
-                return mm_strip_query($image);
+                return $image;
             }
         }
 
-        return mm_strip_query(Message_Manager_Options::get_instance()->get('default-image'));
+        return Message_Manager_Options::get_instance()->get('default-image');
     }
 }
 
